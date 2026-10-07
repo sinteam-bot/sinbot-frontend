@@ -89,7 +89,7 @@
         <div class="feed-meta-row">
           <div class="meta-item">
             <span class="meta-icon">💬</span>
-            <span class="meta-text">&lt;#{{ feed.channelId }}&gt;</span>
+            <DiscordChannel :channel-id="feed.channelId" />
           </div>
           <div class="meta-item">
             <span class="meta-icon">⏱️</span>
@@ -297,6 +297,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useAutofeeds, type AutofeedItem, type CreateAutofeedPayload } from '~/composables/useAutofeeds.ts';
 import DiscordChannelSelect from '~/components/ui/DiscordChannelSelect.vue';
+import DiscordChannel from '~/components/common/DiscordChannel.vue';
 import { useToast } from '~/composables/useToast.ts';
 
 const autofeedsApi = useAutofeeds();

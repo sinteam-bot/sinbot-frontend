@@ -132,7 +132,7 @@
                   #{{ tag }}
                 </span>
                 <span class="channel-pill">
-                  💬 &lt;#{{ feed.channelId }}&gt;
+                  💬 <DiscordChannel :channel-id="feed.channelId" />
                 </span>
               </div>
             </div>
@@ -197,6 +197,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useAutofeeds, type AutofeedItem, type AutofeedSubscription, type AutofeedPreset } from '~/composables/useAutofeeds.ts';
+import DiscordChannel from '~/components/common/DiscordChannel.vue';
 import { useToast } from '~/composables/useToast.ts';
 
 const autofeedsApi = useAutofeeds();

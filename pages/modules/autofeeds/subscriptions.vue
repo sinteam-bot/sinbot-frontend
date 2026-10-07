@@ -91,10 +91,7 @@
         <tbody>
           <tr v-for="sub in filteredSubs" :key="sub.id">
             <td>
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span class="avatar-ph">👤</span>
-                <span class="user-id-code">&lt;@{{ sub.userId }}&gt;</span>
-              </div>
+              <DiscordUser :user-id="sub.userId" variant="inline" :show-presence="true" />
             </td>
             <td>
               <span v-if="sub.targetTag" class="type-badge tag">🏷️ Tag</span>
@@ -238,6 +235,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useAutofeeds, type AutofeedSubscription, type AutofeedItem } from '~/composables/useAutofeeds.ts';
+import DiscordUser from '~/components/common/DiscordUser.vue';
 import { useToast } from '~/composables/useToast.ts';
 
 const autofeedsApi = useAutofeeds();
