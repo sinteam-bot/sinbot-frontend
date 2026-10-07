@@ -1,0 +1,14 @@
+node_modules/
+.env
+.DS_Store
+*.log
+pm2-logs/
+logs/
+.deno_lsp/
+.kilo/
+public
+dist
+.nuxt/
+.output/
+.nitro/
+coverage/

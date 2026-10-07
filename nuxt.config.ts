@@ -41,7 +41,7 @@ export default defineNuxtConfig({
 
   nitro: {
     output: {
-      publicDir: path.resolve(__dirname, '../public')
+      publicDir: path.resolve(__dirname, 'dist')
     }
   },
 
