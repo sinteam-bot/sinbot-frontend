@@ -246,6 +246,13 @@ const FEATURE_LABELS: Record<string, FeatureMeta> = {
     category: 'Utilitaires',
     configRoute: 'teamspeak'
   },
+  autofeeds: {
+    label: 'Flux RSS, LootScraper & Alertes',
+    emoji: '📰',
+    description: 'Agrégateur de flux RSS, jeux gratuits LootScraper, alertes par tags et multi-sources.',
+    category: 'Utilitaires',
+    configRoute: 'autofeeds'
+  },
   general: {
     label: 'Général & Discord',
     emoji: '🤖',
