@@ -239,6 +239,13 @@ const FEATURE_LABELS: Record<string, FeatureMeta> = {
     category: 'Modules IA',
     configRoute: 'openrouter'
   },
+  teamspeak: {
+    label: 'TeamSpeak 3 Widget & Logs',
+    emoji: '🔊',
+    description: 'Widget d\'arborescence des salons/clients TeamSpeak 3 et journalisation des événements.',
+    category: 'Utilitaires',
+    configRoute: 'teamspeak'
+  },
   general: {
     label: 'Général & Discord',
     emoji: '🤖',

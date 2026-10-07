@@ -400,7 +400,7 @@ const DEFAULT_KNOWN_FEATURES = [
   'welcome', 'captcha', 'bump_reminder', 'xp', 'birthdays', 'daily_message',
   'reaction_roles', 'economy', 'temp_voice', 'invites', 'tickets', 'giveaways',
   'polls', 'cards', 'automod', 'reports', 'sticky_roles', 'engagement_advanced',
-  'suggestions', 'startup_notifier', 'scheduler', 'web', 'openrouter', 'general'
+  'suggestions', 'startup_notifier', 'scheduler', 'web', 'openrouter', 'teamspeak', 'general'
 ];
 
 async function loadData() {
