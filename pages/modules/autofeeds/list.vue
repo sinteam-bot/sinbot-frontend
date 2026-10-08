@@ -7,7 +7,7 @@
           Flux Enregistrés ({{ feeds.length }})
         </h3>
         <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-muted);">
-          Gérez vos flux actifs, configurez les filtres d'inclusion/exclusion et testez les publications.
+          Gérez vos flux actifs, configurez les filtres d'inclusion/exclusion et surveillez leur état de santé.
         </p>
       </div>
 
@@ -72,7 +72,14 @@
           <div class="feed-icon-wrap">
             <span v-if="feed.provider === 'youtube'">📺</span>
             <span v-else-if="feed.provider === 'reddit'">🤖</span>
-            <span v-else-if="feed.provider === 'google-news'">📰</span>
+            <span v-else-if="feed.provider === 'google_news'">📰</span>
+            <span v-else-if="feed.provider === 'twitch'">🟣</span>
+            <span v-else-if="feed.provider === 'kick'">🟢</span>
+            <span v-else-if="feed.provider === 'twitter'">✖️</span>
+            <span v-else-if="feed.provider === 'tiktok'">🎵</span>
+            <span v-else-if="feed.provider === 'instagram'">📸</span>
+            <span v-else-if="feed.provider === 'facebook'">👥</span>
+            <span v-else-if="feed.provider === 'linkedin'">💼</span>
             <span v-else-if="feed.category === 'gaming'">🎮</span>
             <span v-else>📡</span>
           </div>
@@ -80,7 +87,24 @@
           <div style="flex: 1; min-width: 0;">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
               <h4 class="feed-title" :title="feed.name">{{ feed.name }}</h4>
-              <span class="provider-pill">{{ feed.provider || 'rss' }}</span>
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <span class="provider-pill">{{ feed.provider || 'rss' }}</span>
+                <!-- Badge de santé du flux -->
+                <span
+                  v-if="feed.lastStatus === 'error'"
+                  class="health-badge error"
+                  :title="feed.lastError || 'Erreur lors de la dernière vérification'"
+                >
+                  ⚠️ Erreur
+                </span>
+                <span
+                  v-else-if="feed.lastCheckedAt"
+                  class="health-badge ok"
+                  :title="`Vérifié avec succès (${feed.checkIntervalMinutes} min)`"
+                >
+                  🟢 OK
+                </span>
+              </div>
             </div>
             <p class="feed-url" :title="feed.url">{{ feed.url }}</p>
           </div>
@@ -117,6 +141,11 @@
           </div>
         </div>
 
+        <!-- Message d'erreur détaillé si présent -->
+        <div v-if="feed.lastStatus === 'error' && feed.lastError" class="error-notice">
+          <span>⚠️ {{ feed.lastError.slice(0, 100) }}</span>
+        </div>
+
         <!-- Pied de carte : Actions -->
         <div class="feed-card-footer">
           <div style="display: flex; align-items: center; gap: 8px;">
@@ -132,6 +161,13 @@
           </div>
 
           <div style="display: flex; gap: 6px;">
+            <button
+              class="module-btn icon-only"
+              title="Modifier la configuration du flux"
+              @click="openEditModal(feed)"
+            >
+              <span>✏️</span>
+            </button>
             <button
               class="module-btn icon-only"
               title="Tester immédiatement l'envoi Discord"
@@ -162,16 +198,16 @@
 
         <form class="modal-form" @submit.prevent="handleCreateFeed">
           <div class="form-group">
-            <label class="form-label">URL du Flux (RSS, YouTube, Reddit, LootScraper...)</label>
+            <label class="form-label">URL ou Cible (RSS, YouTube, Twitch, Kick, Twitter, Reddit...)</label>
             <input
               v-model="form.url"
               type="text"
               required
               class="form-input"
-              placeholder="https://... ou r/GameDeals ou https://youtube.com/@..."
+              placeholder="https://... ou r/GameDeals ou twitch.tv/... ou @PlayStation"
               @blur="autoGuessName"
             />
-            <span class="form-hint">Le type de source (RSS, YouTube, Reddit...) sera automatiquement détecté.</span>
+            <span class="form-hint">Le connecteur sera automatiquement détecté (YouTube, Twitch, Kick, X, Reddit, etc.).</span>
           </div>
 
           <div class="form-group">
@@ -181,7 +217,7 @@
               type="text"
               required
               class="form-input"
-              placeholder="Ex: LootScraper Epic Games, Actus Tech..."
+              placeholder="Ex: LootScraper Epic Games, Stream Zerator..."
             />
           </div>
 
@@ -230,7 +266,7 @@
             <span class="form-hint">Les membres pourront s'abonner individuellement à ces tags pour être alertés !</span>
           </div>
 
-          <!-- Filtres avancés (accordéon) -->
+          <!-- Filtres avancés -->
           <div class="advanced-section">
             <div class="advanced-toggle" @click="showAdvanced = !showAdvanced">
               <span>{{ showAdvanced ? '▼' : '►' }} Options avancées &amp; Filtres par mots-clés</span>
@@ -290,6 +326,109 @@
         </form>
       </div>
     </div>
+
+    <!-- Modal d'édition de flux existant -->
+    <div v-if="showEditModal && editingFeed" class="modal-backdrop" @click.self="showEditModal = false">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3 style="margin: 0; font-size: 18px; color: var(--header-primary);">✏️ Modifier le flux « {{ editingFeed.name }} »</h3>
+          <button class="close-btn" @click="showEditModal = false">✕</button>
+        </div>
+
+        <form class="modal-form" @submit.prevent="handleUpdateFeed">
+          <div class="form-group">
+            <label class="form-label">Nom d'affichage</label>
+            <input
+              v-model="editForm.name"
+              type="text"
+              required
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Salon Discord cible</label>
+            <DiscordChannelSelect
+              v-model="editForm.channelId"
+              placeholder="Sélectionner le salon Discord"
+            />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label">Catégorie</label>
+              <select v-model="editForm.category" class="form-select">
+                <option value="gaming">🎮 Gaming / Deals</option>
+                <option value="news">📰 Actualités</option>
+                <option value="tech">💻 High-Tech</option>
+                <option value="deals">🛍️ Bons Plans</option>
+                <option value="social">📱 Réseaux Sociaux</option>
+                <option value="community">👥 Communauté</option>
+                <option value="general">🌐 Général</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label">Intervalle (minutes)</label>
+              <input
+                v-model.number="editForm.checkIntervalMinutes"
+                type="number"
+                min="2"
+                max="1440"
+                class="form-input"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Tags associés (séparés par virgules)</label>
+            <input
+              v-model="editTagsInput"
+              type="text"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Mots-clés requis (Inclusion)</label>
+            <input
+              v-model="editIncludeInput"
+              type="text"
+              class="form-input"
+              placeholder="Séparés par des virgules"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Mots-clés interdits (Exclusion)</label>
+            <input
+              v-model="editExcludeInput"
+              type="text"
+              class="form-input"
+              placeholder="Séparés par des virgules"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Couleur de l'Embed (Hex)</label>
+            <input
+              v-model="editForm.embedColor"
+              type="text"
+              class="form-input"
+            />
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="module-btn" @click="showEditModal = false">
+              Annuler
+            </button>
+            <button type="submit" class="module-btn primary" :disabled="submitting">
+              <span>{{ submitting ? '⏳ Enregistrement...' : '💾 Sauvegarder' }}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -309,12 +448,18 @@ const testingId = ref<string | null>(null);
 const selectedCategory = ref('');
 
 const showModal = ref(false);
+const showEditModal = ref(false);
 const showAdvanced = ref(false);
 const submitting = ref(false);
 
 const tagsInput = ref('');
 const includeKeywordsInput = ref('');
 const excludeKeywordsInput = ref('');
+
+const editingFeed = ref<AutofeedItem | null>(null);
+const editTagsInput = ref('');
+const editIncludeInput = ref('');
+const editExcludeInput = ref('');
 
 const form = ref<CreateAutofeedPayload>({
   url: '',
@@ -327,6 +472,14 @@ const form = ref<CreateAutofeedPayload>({
   filterKeywords: [],
   excludeKeywords: [],
   regexFilter: '',
+  embedColor: '#5865F2'
+});
+
+const editForm = ref({
+  name: '',
+  channelId: '',
+  category: 'gaming',
+  checkIntervalMinutes: 15,
   embedColor: '#5865F2'
 });
 
@@ -371,6 +524,8 @@ function autoGuessName() {
     const match = form.value.url.match(/r\/([a-zA-Z0-9_]+)/);
     if (match) form.value.name = `Reddit r/${match[1]}`;
   } else if (url.includes('youtube.com')) form.value.name = 'Vidéos YouTube';
+  else if (url.includes('twitch.tv')) form.value.name = 'Twitch Stream';
+  else if (url.includes('kick.com')) form.value.name = 'Kick Live';
   else if (url.includes('news.google.com')) form.value.name = 'Google News';
 }
 
@@ -393,6 +548,21 @@ function openCreateModal() {
   excludeKeywordsInput.value = '';
   showAdvanced.value = false;
   showModal.value = true;
+}
+
+function openEditModal(feed: AutofeedItem) {
+  editingFeed.value = feed;
+  editForm.value = {
+    name: feed.name || '',
+    channelId: feed.channelId,
+    category: feed.category || 'gaming',
+    checkIntervalMinutes: feed.checkIntervalMinutes || 15,
+    embedColor: feed.color || '#5865F2'
+  };
+  editTagsInput.value = (feed.tags || []).join(', ');
+  editIncludeInput.value = (feed.filterKeywords || []).join(', ');
+  editExcludeInput.value = (feed.excludeKeywords || []).join(', ');
+  showEditModal.value = true;
 }
 
 async function loadData() {
@@ -468,6 +638,40 @@ async function handleCreateFeed() {
     showModal.value = false;
   } catch (err: any) {
     showToast(`Erreur création de flux : ${err.message}`, 'error');
+  } finally {
+    submitting.value = false;
+  }
+}
+
+async function handleUpdateFeed() {
+  if (!editingFeed.value) return;
+
+  submitting.value = true;
+  try {
+    const parsedTags = editTagsInput.value.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+    const parsedInclude = editIncludeInput.value.split(',').map(s => s.trim()).filter(Boolean);
+    const parsedExclude = editExcludeInput.value.split(',').map(s => s.trim()).filter(Boolean);
+
+    const updated = await autofeedsApi.updateFeed(editingFeed.value.id, {
+      name: editForm.value.name,
+      channelId: editForm.value.channelId,
+      category: editForm.value.category,
+      checkIntervalMinutes: editForm.value.checkIntervalMinutes,
+      color: editForm.value.embedColor,
+      tags: parsedTags,
+      filterKeywords: parsedInclude,
+      excludeKeywords: parsedExclude
+    });
+
+    const idx = feeds.value.findIndex(f => f.id === updated.id);
+    if (idx !== -1) {
+      feeds.value[idx] = updated;
+    }
+
+    showToast(`Flux « ${updated.name} » mis à jour !`, 'success');
+    showEditModal.value = false;
+  } catch (err: any) {
+    showToast(`Erreur mise à jour : ${err.message}`, 'error');
   } finally {
     submitting.value = false;
   }
@@ -576,6 +780,30 @@ onMounted(() => {
   background: var(--background-secondary-alt);
   color: var(--text-muted);
   text-transform: uppercase;
+}
+.health-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+.health-badge.ok {
+  background: rgba(87, 242, 135, 0.15);
+  color: #57f287;
+}
+.health-badge.error {
+  background: rgba(237, 66, 69, 0.2);
+  color: #ed4245;
+  border: 1px solid rgba(237, 66, 69, 0.4);
+}
+.error-notice {
+  font-size: 11px;
+  color: #ed4245;
+  background: rgba(237, 66, 69, 0.1);
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(237, 66, 69, 0.2);
 }
 .feed-meta-row {
   display: flex;

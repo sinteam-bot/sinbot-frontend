@@ -128,23 +128,24 @@
       </div>
 
       <!-- 5. Twitch -->
-      <div class="provider-card planned">
+      <div class="provider-card ready">
         <div class="provider-card-header">
           <span class="provider-card-icon">🟣</span>
           <div style="flex: 1;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <h4 class="provider-card-title">Twitch</h4>
-              <span class="status-pill planned">🟡 En Roadmap</span>
+              <span class="status-pill ready">🟢 Opérationnel</span>
             </div>
-            <span class="provider-sub">Lives Streamers &amp; Catégories de jeux</span>
+            <span class="provider-sub">Chaînes Streamers, Catégories &amp; Détection Live</span>
           </div>
         </div>
         <p class="provider-card-desc">
-          Alertes de passages en direct via Twitch Webhook EventSub / Twitch API Helix. Titre du stream, jeu en cours et aperçu dynamique.
+          Surveillance des chaînes Twitch avec détection du statut de diffusion en direct, viewers, jeu en cours, miniature et bouton de visionnage direct.
         </p>
         <div class="provider-features">
           <span class="feat-tag">⚡ Alertes de Live instantanées</span>
-          <span class="feat-tag">🎮 Filtre par Jeu/Catégorie</span>
+          <span class="feat-tag">🎮 Détection de Catégorie &amp; Jeu</span>
+          <span class="feat-tag">👥 Compteur de spectateurs</span>
         </div>
         <div class="url-example">
           <code>https://twitch.tv/nom_streamer</code>
@@ -152,22 +153,23 @@
       </div>
 
       <!-- 6. Kick -->
-      <div class="provider-card planned">
+      <div class="provider-card ready">
         <div class="provider-card-header">
           <span class="provider-card-icon">🟢</span>
           <div style="flex: 1;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <h4 class="provider-card-title">Kick</h4>
-              <span class="status-pill planned">🟡 En Roadmap</span>
+              <span class="status-pill ready">🟢 Opérationnel</span>
             </div>
-            <span class="provider-sub">Streamers Kick &amp; Replays</span>
+            <span class="provider-sub">Chaînes Streamers Kick &amp; Replays</span>
           </div>
         </div>
         <p class="provider-card-desc">
-          Surveillance des diffusions en direct sur la plateforme Kick avec notification dans le salon d'annonces Discord.
+          Surveillance en temps réel des diffusions Kick via API v2 avec statut de direct, nombre de spectateurs, jeu joué et lien de lecture rapide.
         </p>
         <div class="provider-features">
           <span class="feat-tag">⚡ Live Notification</span>
+          <span class="feat-tag">🎮 Jeu &amp; Thumbnail</span>
           <span class="feat-tag">💬 Bouton de visionnage</span>
         </div>
         <div class="url-example">
@@ -176,23 +178,24 @@
       </div>
 
       <!-- 7. X / Twitter -->
-      <div class="provider-card planned">
+      <div class="provider-card ready">
         <div class="provider-card-header">
           <span class="provider-card-icon">✖️</span>
           <div style="flex: 1;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <h4 class="provider-card-title">X / Twitter</h4>
-              <span class="status-pill planned">🟡 En Roadmap</span>
+              <span class="status-pill ready">🟢 Opérationnel</span>
             </div>
-            <span class="provider-sub">Comptes, Hashtags &amp; Nitter RSS</span>
+            <span class="provider-sub">Comptes (@handle), Hashtags &amp; Passerelles Nitter</span>
           </div>
         </div>
         <p class="provider-card-desc">
-          Surveillance des posts de comptes X publics (studios de jeux, développeurs, alertes bons plans) via passerelle Nitter RSS ou API Twitter v2.
+          Surveillance des posts X/Twitter (studios, bons plans, créateurs) via passerelle syndiquée avec extraction des hashtags et liens canoniques.
         </p>
         <div class="provider-features">
-          <span class="feat-tag">✓ Tweets &amp; Retweets filtrables</span>
+          <span class="feat-tag">✓ Extraction @handle &amp; URLs x.com</span>
           <span class="feat-tag">#️⃣ Alertes par Hashtags</span>
+          <span class="feat-tag">👤 Bouton d'abonnement au compte</span>
         </div>
         <div class="url-example">
           <code>https://x.com/Wario64 ou @LootScraper</code>
@@ -200,23 +203,24 @@
       </div>
 
       <!-- 8. TikTok -->
-      <div class="provider-card planned">
+      <div class="provider-card ready">
         <div class="provider-card-header">
           <span class="provider-card-icon">🎵</span>
           <div style="flex: 1;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <h4 class="provider-card-title">TikTok</h4>
-              <span class="status-pill planned">🟡 En Roadmap</span>
+              <span class="status-pill ready">🟢 Opérationnel</span>
             </div>
-            <span class="provider-sub">Comptes Créateurs &amp; Hashtags</span>
+            <span class="provider-sub">Comptes Créateurs (@compte) &amp; Flux Vidéos</span>
           </div>
         </div>
         <p class="provider-card-desc">
-          Surveillance des nouvelles vidéos publiées par des comptes créateurs avec lien de prévisualisation et tags.
+          Surveillance des nouvelles vidéos publiées par des créateurs TikTok avec miniature, description et redirection vers la vidéo.
         </p>
         <div class="provider-features">
           <span class="feat-tag">🎬 Détection de vidéos</span>
           <span class="feat-tag">🏷️ Tags créateur</span>
+          <span class="feat-tag">👤 Suivi direct par créateur</span>
         </div>
         <div class="url-example">
           <code>https://tiktok.com/@compte</code>
@@ -224,23 +228,24 @@
       </div>
 
       <!-- 9. Instagram -->
-      <div class="provider-card planned">
+      <div class="provider-card ready">
         <div class="provider-card-header">
           <span class="provider-card-icon">📸</span>
           <div style="flex: 1;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <h4 class="provider-card-title">Instagram</h4>
-              <span class="status-pill planned">🟡 En Roadmap</span>
+              <span class="status-pill ready">🟢 Opérationnel</span>
             </div>
-            <span class="provider-sub">Posts &amp; Carrousels de profils publics</span>
+            <span class="provider-sub">Profils publics, Photos &amp; Carrousels</span>
           </div>
         </div>
         <p class="provider-card-desc">
-          Publication automatique des nouvelles photos et carrousels de marques ou de créateurs dans un salon médias Discord.
+          Diffusion automatique des publications et carrousels de marques ou créateurs avec aperçu média et liens canoniques Instagram.
         </p>
         <div class="provider-features">
-          <span class="feat-tag">📷 Aperçu de photo HD</span>
+          <span class="feat-tag">📷 Aperçu média HD</span>
           <span class="feat-tag">📝 Description du post</span>
+          <span class="feat-tag">👤 Suivi par profil</span>
         </div>
         <div class="url-example">
           <code>https://instagram.com/compte</code>
@@ -248,23 +253,24 @@
       </div>
 
       <!-- 10. Facebook -->
-      <div class="provider-card planned">
+      <div class="provider-card ready">
         <div class="provider-card-header">
           <span class="provider-card-icon">📘</span>
           <div style="flex: 1;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <h4 class="provider-card-title">Facebook Pages</h4>
-              <span class="status-pill planned">🟡 En Roadmap</span>
+              <span class="status-pill ready">🟢 Opérationnel</span>
             </div>
-            <span class="provider-sub">Pages Publiques &amp; Annonces</span>
+            <span class="provider-sub">Pages Publiques &amp; Annonces Officielles</span>
           </div>
         </div>
         <p class="provider-card-desc">
-          Surveillance des publications officielles sur les pages Facebook publiques de marques, d'associations ou de serveurs.
+          Surveillance des publications officielles sur les pages Facebook publiques de marques, studios de jeux ou communautés.
         </p>
         <div class="provider-features">
           <span class="feat-tag">📢 Annonces de page</span>
           <span class="feat-tag">🔗 Liens d'articles</span>
+          <span class="feat-tag">🏷️ Tags d'organisation</span>
         </div>
         <div class="url-example">
           <code>https://facebook.com/page_officielle</code>
@@ -272,23 +278,24 @@
       </div>
 
       <!-- 11. LinkedIn -->
-      <div class="provider-card planned">
+      <div class="provider-card ready">
         <div class="provider-card-header">
           <span class="provider-card-icon">💼</span>
           <div style="flex: 1;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <h4 class="provider-card-title">LinkedIn</h4>
-              <span class="status-pill planned">🟡 En Roadmap</span>
+              <span class="status-pill ready">🟢 Opérationnel</span>
             </div>
             <span class="provider-sub">Pages Entreprises &amp; Offres d'emploi</span>
           </div>
         </div>
         <p class="provider-card-desc">
-          Diffusion des actualités d'entreprises, offres de stage ou recrutements tech directement dans un salon dédié du serveur Discord.
+          Diffusion des actualités d'entreprises, communiqués tech ou offres professionnelles directement dans vos salons Discord.
         </p>
         <div class="provider-features">
           <span class="feat-tag">🏢 Posts d'entreprises</span>
           <span class="feat-tag">💼 Mots-clés de recrutement</span>
+          <span class="feat-tag">👤 Filtrage par expéditeur</span>
         </div>
         <div class="url-example">
           <code>https://linkedin.com/company/entreprise</code>

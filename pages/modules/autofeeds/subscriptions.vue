@@ -7,7 +7,7 @@
           🔔 Abonnements &amp; Alertes Membres ({{ subscriptions.length }})
         </h3>
         <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-muted);">
-          Liste des souscriptions actives par tag, catégorie ou mots-clés. Les membres reçoivent une notification personnalisée (mention ou DM).
+          Liste des souscriptions actives par tag, catégorie, compte/créateur ou mots-clés. Les membres reçoivent une notification personnalisée (mention ou DM).
         </p>
       </div>
 
@@ -37,28 +37,35 @@
         :class="{ active: filterType === 'tag' }"
         @click="filterType = 'tag'"
       >
-        🏷️ Par Tag ({{ subscriptions.filter(s => s.targetTag).length }})
+        🏷️ Par Tag ({{ subscriptions.filter(s => s.targetType === 'tag').length }})
+      </button>
+      <button
+        class="filter-pill"
+        :class="{ active: filterType === 'account' }"
+        @click="filterType = 'account'"
+      >
+        👤 Par Compte ({{ subscriptions.filter(s => s.targetType === 'account' || s.targetType === 'author').length }})
       </button>
       <button
         class="filter-pill"
         :class="{ active: filterType === 'category' }"
         @click="filterType = 'category'"
       >
-        📁 Par Catégorie ({{ subscriptions.filter(s => s.targetCategory).length }})
+        📁 Par Catégorie ({{ subscriptions.filter(s => s.targetType === 'category').length }})
       </button>
       <button
         class="filter-pill"
-        :class="{ active: filterType === 'keywords' }"
-        @click="filterType = 'keywords'"
+        :class="{ active: filterType === 'keyword' }"
+        @click="filterType = 'keyword'"
       >
-        🔍 Par Mots-clés ({{ subscriptions.filter(s => s.targetKeywords?.length).length }})
+        🔍 Par Mots-clés ({{ subscriptions.filter(s => s.targetType === 'keyword').length }})
       </button>
       <button
         class="filter-pill"
         :class="{ active: filterType === 'feed' }"
         @click="filterType = 'feed'"
       >
-        📡 Par Flux spécifique ({{ subscriptions.filter(s => s.feedId).length }})
+        📡 Par Flux spécifique ({{ subscriptions.filter(s => s.targetType === 'feed').length }})
       </button>
     </div>
 
@@ -82,8 +89,8 @@
             <th>Membre Discord</th>
             <th>Type de Cible</th>
             <th>Valeur / Critère</th>
+            <th>Filtres Perso</th>
             <th>Mode Notification</th>
-            <th>Portée</th>
             <th>Créé le</th>
             <th style="text-align: right;">Action</th>
           </tr>
@@ -94,18 +101,31 @@
               <DiscordUser :user-id="sub.userId" variant="inline" :show-presence="true" />
             </td>
             <td>
-              <span v-if="sub.targetTag" class="type-badge tag">🏷️ Tag</span>
-              <span v-else-if="sub.targetCategory" class="type-badge cat">📁 Catégorie</span>
-              <span v-else-if="sub.targetKeywords?.length" class="type-badge kw">🔍 Mots-clés</span>
-              <span v-else-if="sub.feedId" class="type-badge feed">📡 Flux</span>
+              <span v-if="sub.targetType === 'tag'" class="type-badge tag">🏷️ Tag</span>
+              <span v-else-if="sub.targetType === 'account' || sub.targetType === 'author'" class="type-badge author">👤 Compte</span>
+              <span v-else-if="sub.targetType === 'category'" class="type-badge cat">📁 Catégorie</span>
+              <span v-else-if="sub.targetType === 'keyword'" class="type-badge kw">🔍 Mot-clé</span>
+              <span v-else-if="sub.targetType === 'feed'" class="type-badge feed">📡 Flux</span>
               <span v-else class="type-badge">🌐 Global</span>
             </td>
             <td>
-              <strong v-if="sub.targetTag" class="val-pill">#{{ sub.targetTag }}</strong>
-              <strong v-else-if="sub.targetCategory" class="val-pill cat">{{ sub.targetCategory }}</strong>
-              <span v-else-if="sub.targetKeywords?.length" class="val-pill kw">{{ sub.targetKeywords.join(', ') }}</span>
-              <span v-else-if="sub.feedId" class="font-mono">Flux #{{ sub.feedId.slice(0, 8) }}</span>
+              <strong v-if="sub.targetType === 'tag'" class="val-pill">#{{ sub.targetValue }}</strong>
+              <strong v-else-if="sub.targetType === 'account' || sub.targetType === 'author'" class="val-pill author">@{{ sub.targetValue }}</strong>
+              <strong v-else-if="sub.targetType === 'category'" class="val-pill cat">{{ sub.targetValue }}</strong>
+              <span v-else-if="sub.targetType === 'keyword'" class="val-pill kw">{{ sub.targetValue }}</span>
+              <span v-else-if="sub.targetType === 'feed'" class="font-mono">Flux #{{ sub.targetValue.slice(0, 8) }}</span>
               <span v-else class="text-muted">Tout le serveur</span>
+            </td>
+            <td>
+              <div v-if="sub.filters?.includeKeywords?.length || sub.filters?.excludeKeywords?.length" style="display: flex; gap: 4px; flex-wrap: wrap;">
+                <span v-if="sub.filters?.includeKeywords?.length" class="filter-mini-tag inc">
+                  +{{ sub.filters.includeKeywords.join(', ') }}
+                </span>
+                <span v-if="sub.filters?.excludeKeywords?.length" class="filter-mini-tag exc">
+                  -{{ sub.filters.excludeKeywords.join(', ') }}
+                </span>
+              </div>
+              <span v-else class="text-muted" style="font-size: 11px;">Aucun</span>
             </td>
             <td>
               <span
@@ -114,10 +134,6 @@
               >
                 {{ sub.notifyMode === 'dm' ? '📩 Message Privé (DM)' : '📢 Mention Salon' }}
               </span>
-            </td>
-            <td>
-              <span v-if="sub.feedId" class="text-muted" style="font-size: 12px;">Flux spécifique</span>
-              <span v-else style="font-size: 12px; color: #57f287;">Tous les flux</span>
             </td>
             <td>
               <span class="date-text">{{ formatDate(sub.createdAt) }}</span>
@@ -158,46 +174,54 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">Critère d'alerte</label>
+            <label class="form-label">Type de cible</label>
             <select v-model="targetType" class="form-select">
               <option value="tag">🏷️ Par Tag (ex: epic, steam, deals)</option>
-              <option value="category">📁 Par Catégorie (ex: gaming, news)</option>
-              <option value="keywords">🔍 Par Mots-clés (ex: 100% off, free)</option>
-              <option value="all">🌐 Tout recevoir</option>
+              <option value="account">👤 Par Compte / Créateur (ex: PlayStation, Zerator, Dealabs)</option>
+              <option value="category">📁 Par Catégorie (ex: gaming, news, tech)</option>
+              <option value="keyword">🔍 Par Mot-clé (ex: 100% off, free)</option>
+              <option value="feed">📡 Par Flux spécifique</option>
             </select>
           </div>
 
-          <div v-if="targetType === 'tag'" class="form-group">
-            <label class="form-label">Tag surveillé</label>
+          <div class="form-group">
+            <label class="form-label">Valeur ciblée</label>
             <input
-              v-model="form.targetTag"
+              v-model="targetValueInput"
               type="text"
               required
               class="form-input"
-              placeholder="Ex: epic ou steam ou free"
+              :placeholder="getTargetPlaceholder()"
             />
           </div>
 
-          <div v-else-if="targetType === 'category'" class="form-group">
-            <label class="form-label">Catégorie surveillée</label>
-            <input
-              v-model="form.targetCategory"
-              type="text"
-              required
-              class="form-input"
-              placeholder="Ex: gaming ou tech"
-            />
-          </div>
+          <!-- Filtres personnels de l'abonné -->
+          <div class="advanced-section">
+            <div class="advanced-toggle" @click="showFilters = !showFilters">
+              <span>{{ showFilters ? '▼' : '►' }} Filtres personnels (optionnel)</span>
+            </div>
 
-          <div v-else-if="targetType === 'keywords'" class="form-group">
-            <label class="form-label">Mots-clés requis (séparés par des virgules)</label>
-            <input
-              v-model="keywordsInput"
-              type="text"
-              required
-              class="form-input"
-              placeholder="Ex: free, 100% off, giveway"
-            />
+            <div v-if="showFilters" class="advanced-body">
+              <div class="form-group">
+                <label class="form-label">Mots-clés requis (Inclusion)</label>
+                <input
+                  v-model="personalIncludeInput"
+                  type="text"
+                  class="form-input"
+                  placeholder="Ex: steam, free (séparés par virgules)"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Mots-clés interdits (Exclusion)</label>
+                <input
+                  v-model="personalExcludeInput"
+                  type="text"
+                  class="form-input"
+                  placeholder="Ex: mobile, dlc, beta"
+                />
+              </div>
+            </div>
           </div>
 
           <div class="form-group">
@@ -205,16 +229,6 @@
             <select v-model="form.notifyMode" class="form-select">
               <option value="mention">📢 Mention dans le salon du flux (&lt;@id&gt;)</option>
               <option value="dm">📩 Message Privé direct du bot (DM)</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Restreindre à un flux spécifique (optionnel)</label>
-            <select v-model="form.feedId" class="form-select">
-              <option value="">Tous les flux correspondants (Recommandé)</option>
-              <option v-for="f in feeds" :key="f.id" :value="f.id">
-                {{ f.name }} (&lt;#{{ f.channelId }}&gt;)
-              </option>
             </select>
           </div>
 
@@ -247,32 +261,42 @@ const loading = ref(true);
 const filterType = ref('');
 
 const showModal = ref(false);
+const showFilters = ref(false);
 const submitting = ref(false);
-const targetType = ref<'tag' | 'category' | 'keywords' | 'all'>('tag');
-const keywordsInput = ref('');
+
+const targetType = ref<'tag' | 'category' | 'keyword' | 'account' | 'feed'>('tag');
+const targetValueInput = ref('');
+const personalIncludeInput = ref('');
+const personalExcludeInput = ref('');
 
 const form = ref({
   userId: '',
-  feedId: '',
-  targetTag: '',
-  targetCategory: '',
-  targetKeywords: [] as string[],
   notifyMode: 'mention' as 'mention' | 'dm'
 });
 
 const filteredSubs = computed(() => {
   if (!filterType.value) return subscriptions.value;
-  if (filterType.value === 'tag') return subscriptions.value.filter(s => s.targetTag);
-  if (filterType.value === 'category') return subscriptions.value.filter(s => s.targetCategory);
-  if (filterType.value === 'keywords') return subscriptions.value.filter(s => s.targetKeywords?.length);
-  if (filterType.value === 'feed') return subscriptions.value.filter(s => s.feedId);
-  return subscriptions.value;
+  if (filterType.value === 'account') {
+    return subscriptions.value.filter(s => s.targetType === 'account' || s.targetType === 'author');
+  }
+  return subscriptions.value.filter(s => s.targetType === filterType.value);
 });
 
-function formatDate(isoDate?: string): string {
+function getTargetPlaceholder(): string {
+  switch (targetType.value) {
+    case 'tag': return 'Ex: epic ou steam ou gratuit';
+    case 'account': return 'Ex: PlayStation, Zerator, Dealabs';
+    case 'category': return 'Ex: gaming ou tech';
+    case 'keyword': return 'Ex: 100% off ou free';
+    case 'feed': return 'Identifiant UUID du flux';
+    default: return 'Valeur à surveiller';
+  }
+}
+
+function formatDate(isoDate?: number | string): string {
   if (!isoDate) return 'N/A';
   try {
-    return new Date(isoDate).toLocaleDateString('fr-FR', {
+    return new Date(Number(isoDate)).toLocaleDateString('fr-FR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -280,21 +304,20 @@ function formatDate(isoDate?: string): string {
       minute: '2-digit'
     });
   } catch {
-    return isoDate;
+    return String(isoDate);
   }
 }
 
 function openCreateModal() {
   form.value = {
     userId: '',
-    feedId: '',
-    targetTag: 'epic',
-    targetCategory: '',
-    targetKeywords: [],
     notifyMode: 'mention'
   };
   targetType.value = 'tag';
-  keywordsInput.value = '';
+  targetValueInput.value = 'epic';
+  personalIncludeInput.value = '';
+  personalExcludeInput.value = '';
+  showFilters.value = false;
   showModal.value = true;
 }
 
@@ -328,19 +351,19 @@ async function handleDeleteSub(sub: AutofeedSubscription) {
 async function handleCreateSub() {
   submitting.value = true;
   try {
+    const includeKws = personalIncludeInput.value.split(',').map(s => s.trim()).filter(Boolean);
+    const excludeKws = personalExcludeInput.value.split(',').map(s => s.trim()).filter(Boolean);
+
     const payload: any = {
       userId: form.value.userId,
+      targetType: targetType.value,
+      targetValue: targetValueInput.value.trim().toLowerCase(),
       notifyMode: form.value.notifyMode,
-      feedId: form.value.feedId || null
+      filters: {
+        includeKeywords: includeKws,
+        excludeKeywords: excludeKws
+      }
     };
-
-    if (targetType.value === 'tag') {
-      payload.targetTag = form.value.targetTag.trim().toLowerCase();
-    } else if (targetType.value === 'category') {
-      payload.targetCategory = form.value.targetCategory.trim().toLowerCase();
-    } else if (targetType.value === 'keywords') {
-      payload.targetKeywords = keywordsInput.value.split(',').map(s => s.trim()).filter(Boolean);
-    }
 
     const created = await autofeedsApi.createSubscription(payload);
     subscriptions.value.unshift(created);
@@ -412,17 +435,6 @@ onMounted(() => {
   border-bottom: 1px solid var(--border-subtle);
   color: var(--text-normal);
 }
-.avatar-ph {
-  font-size: 18px;
-}
-.user-id-code {
-  font-family: monospace;
-  font-size: 12px;
-  color: var(--header-primary);
-  background: var(--background-secondary-alt);
-  padding: 2px 6px;
-  border-radius: 4px;
-}
 .type-badge {
   font-size: 11px;
   font-weight: 600;
@@ -439,6 +451,10 @@ onMounted(() => {
   background: rgba(88, 101, 242, 0.2);
   color: var(--brand-experiment, #5865f2);
 }
+.type-badge.author {
+  background: rgba(235, 69, 158, 0.15);
+  color: #eb459e;
+}
 .type-badge.kw {
   background: rgba(254, 231, 92, 0.15);
   color: #fee75c;
@@ -448,6 +464,9 @@ onMounted(() => {
   padding: 2px 8px;
   border-radius: 4px;
   background: var(--background-secondary-alt);
+}
+.val-pill.author {
+  color: #eb459e;
 }
 .mode-badge {
   font-size: 11px;
@@ -462,6 +481,19 @@ onMounted(() => {
 .mode-badge.dm {
   background: rgba(235, 69, 158, 0.15);
   color: #eb459e;
+}
+.filter-mini-tag {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.filter-mini-tag.inc {
+  background: rgba(87, 242, 135, 0.15);
+  color: #57f287;
+}
+.filter-mini-tag.exc {
+  background: rgba(237, 66, 69, 0.15);
+  color: #ed4245;
 }
 .date-text {
   font-size: 12px;
@@ -544,6 +576,29 @@ onMounted(() => {
 .form-hint {
   font-size: 11px;
   color: var(--text-muted);
+}
+.advanced-section {
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  background: var(--background-secondary);
+}
+.advanced-toggle {
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+.advanced-toggle:hover {
+  color: var(--text-normal);
+}
+.advanced-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-top: 1px solid var(--border-subtle);
 }
 .modal-footer {
   display: flex;

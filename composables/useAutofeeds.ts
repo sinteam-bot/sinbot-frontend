@@ -27,6 +27,10 @@ export interface AutofeedItem {
   lastItemPublishedAt?: number;
   intervalMinutes: number;
   enabled: boolean;
+  lastCheckedAt?: number;
+  lastStatus?: 'ok' | 'error';
+  lastError?: string | null;
+  failCount?: number;
   createdAt: number;
   updatedAt?: number | null;
 }
@@ -48,9 +52,13 @@ export interface AutofeedSubscription {
   id: string;
   guildId: string;
   userId: string;
-  targetType: 'tag' | 'category' | 'feed' | 'keyword';
+  targetType: 'tag' | 'category' | 'feed' | 'keyword' | 'account' | 'author';
   targetValue: string;
   notifyMode: 'mention' | 'dm';
+  filters?: {
+    includeKeywords?: string[];
+    excludeKeywords?: string[];
+  };
   createdAt: number;
 }
 
