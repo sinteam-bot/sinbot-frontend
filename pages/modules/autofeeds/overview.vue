@@ -50,8 +50,8 @@
         <div class="module-stat-icon">🌐</div>
         <div class="module-stat-info">
           <span class="module-stat-label">Fournisseurs Actifs</span>
-          <span class="module-stat-value">16</span>
-          <span class="module-stat-sub">GitHub, GitLab, Status, RSS...</span>
+          <span class="module-stat-value">17</span>
+          <span class="module-stat-sub">Steam, GitHub, GitLab, Status, RSS...</span>
         </div>
       </div>
     </div>
@@ -236,6 +236,14 @@
           <div class="command-row">
             <code>/feed digest &lt;flux&gt;</code>
             <span>Génère et publie immédiatement la Gazette / Digest avec synthèse IA</span>
+          </div>
+          <div class="command-row">
+            <code>/feed purge [flux]</code>
+            <span>Nettoie les deals et alertes expirés de l'historique et de Discord</span>
+          </div>
+          <div class="command-row">
+            <code>/feed audio &lt;flux&gt;</code>
+            <span>Génère un flash audio radio TTS des dernières actualités</span>
           </div>
           <div class="command-row">
             <code>/feed list</code>

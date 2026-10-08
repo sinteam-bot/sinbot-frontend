@@ -24,6 +24,10 @@
           <span>📤</span>
           <span>Export OPML</span>
         </button>
+        <button class="module-btn secondary" :disabled="purging" @click="handlePurgeExpired">
+          <span>🧹</span>
+          <span>{{ purging ? 'Purge...' : 'Purger Expirés' }}</span>
+        </button>
         <button class="module-btn primary" @click="openCreateModal">
           <span>➕</span>
           <span>Ajouter un Flux</span>
@@ -98,6 +102,7 @@
             <span v-else-if="feed.provider === 'github'">🐙</span>
             <span v-else-if="feed.provider === 'gitlab'">🦊</span>
             <span v-else-if="feed.provider === 'statuspage'">📊</span>
+            <span v-else-if="feed.provider === 'steam'">🎮</span>
             <span v-else-if="feed.provider === 'bluesky'">🦋</span>
             <span v-else-if="feed.category === 'gaming'">🎮</span>
             <span v-else>📡</span>
@@ -195,6 +200,14 @@
               @click="openEditModal(feed)"
             >
               <span>✏️</span>
+            </button>
+            <button
+              class="module-btn icon-only"
+              title="Générer un Bulletin Vocal / Flash Audio TTS"
+              :disabled="audioLoadingId === feed.id"
+              @click="handleAudioBriefing(feed)"
+            >
+              <span>{{ audioLoadingId === feed.id ? '⏳' : '🎙️' }}</span>
             </button>
             <button
               class="module-btn icon-only"
@@ -568,6 +581,58 @@
                 ></textarea>
                 <span class="form-hint">Redirige automatiquement un article avec un tag spécifique vers un autre salon Discord.</span>
               </div>
+
+              <!-- 🗳️ Community Pulse (Réactions & Sondages) -->
+              <div class="form-group" style="background: rgba(237, 66, 69, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(237, 66, 69, 0.2); margin-top: 10px;">
+                <div style="font-weight: 600; color: var(--header-primary); font-size: 13px; margin-bottom: 6px;">🗳️ Community Pulse (Engagement)</div>
+                <div style="margin-bottom: 8px;">
+                  <label class="form-label" style="font-size: 11px;">Réactions emojis automatiques (séparées par des virgules)</label>
+                  <input v-model="form.autoReactionsInput" type="text" class="form-input" placeholder="🔥, 😐, 💸" />
+                  <span class="form-hint" style="font-size: 11px;">Ajoute automatiquement ces réactions sous chaque publication Discord.</span>
+                </div>
+                <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); cursor: pointer;">
+                  <input v-model="form.autoPoll" type="checkbox" />
+                  Sondage d'opinion Discord automatique sous l'article
+                </label>
+              </div>
+
+              <!-- 🚨 Breaking News & Alertes Flash -->
+              <div class="form-group" style="background: rgba(237, 66, 69, 0.08); padding: 12px; border-radius: 8px; border: 1px solid rgba(237, 66, 69, 0.3); margin-top: 10px;">
+                <div style="font-weight: 600; color: var(--header-primary); font-size: 13px; margin-bottom: 6px;">🚨 Alerte Flash / Breaking News</div>
+                <div style="margin-bottom: 8px;">
+                  <label class="form-label" style="font-size: 11px;">Mots-clés urgents (déclenchent l'embed rouge 🚨 FLASH INFO)</label>
+                  <input v-model="form.breakingKeywordsInput" type="text" class="form-input" placeholder="BREAKING, URGENT, CVE-, 0-DAY" />
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                  <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); cursor: pointer;">
+                    <input v-model="form.bypassQuietHours" type="checkbox" />
+                    Outrepasser les heures calmes et limites de débit pour les urgences
+                  </label>
+                  <div>
+                    <label class="form-label" style="font-size: 11px;">Rôle prioritaire à mentionner (optionnel)</label>
+                    <input v-model="form.breakingRoleId" type="text" class="form-input" placeholder="ID du rôle (ex: 123456789012345678)" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- 🧹 Auto-Purge & Deals Expirés -->
+              <div class="form-group" style="background: rgba(88, 101, 242, 0.05); padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle); margin-top: 10px;">
+                <div style="font-weight: 600; color: var(--header-primary); font-size: 13px; margin-bottom: 6px;">🧹 Auto-Purge des Messages Discord Expirés</div>
+                <label class="form-label" style="font-size: 11px;">Durée de rétention Discord en jours (0 = pas de suppression)</label>
+                <input v-model.number="form.autoExpireDays" type="number" min="0" max="365" class="form-input" placeholder="Ex: 7" />
+                <span class="form-hint" style="font-size: 11px;">Supprime automatiquement le message Discord après expiration du délai.</span>
+              </div>
+
+              <!-- 🎙️ Bulletin Vocal / Radio Flash (TTS) -->
+              <div class="form-group" style="background: rgba(88, 101, 242, 0.08); padding: 12px; border-radius: 8px; border: 1px solid rgba(88, 101, 242, 0.2); margin-top: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <div>
+                    <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🎙️ Bulletin Vocal / Daily Audio Briefing (TTS)</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">Génération automatique d'une synthèse radio MP3 des actualités</div>
+                  </div>
+                  <input v-model="form.enableAudioBriefing" type="checkbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: #5865f2;" />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -877,6 +942,58 @@
             <span class="form-hint">Redirige automatiquement un article avec un tag spécifique vers un autre salon Discord.</span>
           </div>
 
+          <!-- 🗳️ Community Pulse (Réactions & Sondages) -->
+          <div class="form-group" style="background: rgba(237, 66, 69, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(237, 66, 69, 0.2); margin-top: 10px;">
+            <div style="font-weight: 600; color: var(--header-primary); font-size: 13px; margin-bottom: 6px;">🗳️ Community Pulse (Engagement)</div>
+            <div style="margin-bottom: 8px;">
+              <label class="form-label" style="font-size: 11px;">Réactions emojis automatiques (séparées par des virgules)</label>
+              <input v-model="editForm.autoReactionsInput" type="text" class="form-input" placeholder="🔥, 😐, 💸" />
+              <span class="form-hint" style="font-size: 11px;">Ajoute automatiquement ces réactions sous chaque publication Discord.</span>
+            </div>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); cursor: pointer;">
+              <input v-model="editForm.autoPoll" type="checkbox" />
+              Sondage d'opinion Discord automatique sous l'article
+            </label>
+          </div>
+
+          <!-- 🚨 Breaking News & Alertes Flash -->
+          <div class="form-group" style="background: rgba(237, 66, 69, 0.08); padding: 12px; border-radius: 8px; border: 1px solid rgba(237, 66, 69, 0.3); margin-top: 10px;">
+            <div style="font-weight: 600; color: var(--header-primary); font-size: 13px; margin-bottom: 6px;">🚨 Alerte Flash / Breaking News</div>
+            <div style="margin-bottom: 8px;">
+              <label class="form-label" style="font-size: 11px;">Mots-clés urgents (déclenchent l'embed rouge 🚨 FLASH INFO)</label>
+              <input v-model="editForm.breakingKeywordsInput" type="text" class="form-input" placeholder="BREAKING, URGENT, CVE-, 0-DAY" />
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); cursor: pointer;">
+                <input v-model="editForm.bypassQuietHours" type="checkbox" />
+                Outrepasser les heures calmes et limites de débit pour les urgences
+              </label>
+              <div>
+                <label class="form-label" style="font-size: 11px;">Rôle prioritaire à mentionner (optionnel)</label>
+                <input v-model="editForm.breakingRoleId" type="text" class="form-input" placeholder="ID du rôle (ex: 123456789012345678)" />
+              </div>
+            </div>
+          </div>
+
+          <!-- 🧹 Auto-Purge & Deals Expirés -->
+          <div class="form-group" style="background: rgba(88, 101, 242, 0.05); padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle); margin-top: 10px;">
+            <div style="font-weight: 600; color: var(--header-primary); font-size: 13px; margin-bottom: 6px;">🧹 Auto-Purge des Messages Discord Expirés</div>
+            <label class="form-label" style="font-size: 11px;">Durée de rétention Discord en jours (0 = pas de suppression)</label>
+            <input v-model.number="editForm.autoExpireDays" type="number" min="0" max="365" class="form-input" placeholder="Ex: 7" />
+            <span class="form-hint" style="font-size: 11px;">Supprime automatiquement le message Discord après expiration du délai.</span>
+          </div>
+
+          <!-- 🎙️ Bulletin Vocal / Radio Flash (TTS) -->
+          <div class="form-group" style="background: rgba(88, 101, 242, 0.08); padding: 12px; border-radius: 8px; border: 1px solid rgba(88, 101, 242, 0.2); margin-top: 10px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🎙️ Bulletin Vocal / Daily Audio Briefing (TTS)</div>
+                <div style="font-size: 12px; color: var(--text-muted);">Génération automatique d'une synthèse radio MP3 des actualités</div>
+              </div>
+              <input v-model="editForm.enableAudioBriefing" type="checkbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: #5865f2;" />
+            </div>
+          </div>
+
           <div class="modal-footer">
             <button type="button" class="module-btn" @click="showEditModal = false">
               Annuler
@@ -935,6 +1052,37 @@
         </form>
       </div>
     </div>
+
+    <!-- Modal Flash Audio -->
+    <div v-if="showAudioModal && currentBriefing" class="modal-backdrop" @click.self="showAudioModal = false">
+      <div class="modal-card" style="max-width: 520px;">
+        <div class="modal-header">
+          <h3 style="margin: 0; font-size: 16px; color: var(--header-primary); display: flex; align-items: center; gap: 8px;">
+            <span>🎙️</span> Flash Radio : {{ currentBriefing.feedTitle }}
+          </h3>
+          <button class="close-btn" @click="showAudioModal = false">✕</button>
+        </div>
+        <div style="padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+          <p style="margin: 0; font-size: 13px; color: var(--text-normal); background: var(--background-secondary-alt); padding: 12px; border-radius: 6px; line-height: 1.5;">
+            {{ currentBriefing.script }}
+          </p>
+          <div style="font-size: 12px; color: var(--text-muted);">
+            📄 {{ currentBriefing.itemCount }} actualités synthétisées • Fichier : <code>{{ currentBriefing.filename }}</code>
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
+            <a
+              :href="`/api/autofeeds/${encodeURIComponent(currentBriefing.feedId)}/audio?download=true`"
+              target="_blank"
+              class="module-btn primary"
+              style="text-decoration: none;"
+            >
+              <span>📥 Télécharger l'audio MP3</span>
+            </a>
+            <button class="module-btn" @click="showAudioModal = false">Fermer</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -975,7 +1123,12 @@ const opmlContent = ref('');
 const opmlFileName = ref('');
 const opmlImporting = ref(false);
 
-const form = ref<CreateAutofeedPayload>({
+const purging = ref(false);
+const audioLoadingId = ref<string | null>(null);
+const showAudioModal = ref(false);
+const currentBriefing = ref<{ feedId: string; feedTitle: string; script: string; itemCount: number; filename: string } | null>(null);
+
+const form = ref<any>({
   url: '',
   name: '',
   channelId: '',
@@ -1006,7 +1159,14 @@ const form = ref<CreateAutofeedPayload>({
   quietHoursStart: '22:00',
   quietHoursEnd: '08:00',
   quietHoursSuppressMentions: true,
-  maxPostsPerHour: 0
+  maxPostsPerHour: 0,
+  autoReactionsInput: '',
+  autoPoll: false,
+  breakingKeywordsInput: '',
+  bypassQuietHours: false,
+  breakingRoleId: '',
+  autoExpireDays: 0,
+  enableAudioBriefing: false
 });
 
 const editForm = ref({
@@ -1034,7 +1194,14 @@ const editForm = ref({
   quietHoursStart: '22:00',
   quietHoursEnd: '08:00',
   quietHoursSuppressMentions: true,
-  maxPostsPerHour: 0
+  maxPostsPerHour: 0,
+  autoReactionsInput: '',
+  autoPoll: false,
+  breakingKeywordsInput: '',
+  bypassQuietHours: false,
+  breakingRoleId: '',
+  autoExpireDays: 0,
+  enableAudioBriefing: false
 });
 
 function isLiveProvider(provider?: string): boolean {
@@ -1173,7 +1340,14 @@ function openEditModal(feed: AutofeedItem) {
     quietHoursStart: feed.quietHours?.start || '22:00',
     quietHoursEnd: feed.quietHours?.end || '08:00',
     quietHoursSuppressMentions: feed.quietHours?.suppressMentions !== false,
-    maxPostsPerHour: feed.maxPostsPerHour || 0
+    maxPostsPerHour: feed.maxPostsPerHour || 0,
+    autoReactionsInput: (feed.autoReactions || []).join(', '),
+    autoPoll: Boolean(feed.autoPoll),
+    breakingKeywordsInput: (feed.breakingKeywords || []).join(', '),
+    bypassQuietHours: Boolean(feed.bypassQuietHours),
+    breakingRoleId: feed.breakingRoleId || '',
+    autoExpireDays: feed.autoExpireDays || 0,
+    enableAudioBriefing: Boolean(feed.enableAudioBriefing)
   };
   editTagsInput.value = (feed.tags || []).join(', ');
   editIncludeInput.value = (feed.filterKeywords || []).join(', ');
@@ -1254,8 +1428,25 @@ async function handleCreateFeed() {
       try { tagRouting = JSON.parse(form.value.channelTagRoutingJson); } catch {}
     }
 
+    const parsedAutoReactions = (form.value.autoReactionsInput || '')
+      .split(',')
+      .map((s: string) => s.trim())
+      .filter(Boolean);
+
+    const parsedBreakingKeywords = (form.value.breakingKeywordsInput || '')
+      .split(',')
+      .map((s: string) => s.trim().toUpperCase())
+      .filter(Boolean);
+
     const payload = {
       ...form.value,
+      autoReactions: parsedAutoReactions,
+      autoPoll: Boolean(form.value.autoPoll),
+      breakingKeywords: parsedBreakingKeywords,
+      bypassQuietHours: Boolean(form.value.bypassQuietHours),
+      breakingRoleId: form.value.breakingRoleId || undefined,
+      autoExpireDays: Number(form.value.autoExpireDays || 0),
+      enableAudioBriefing: Boolean(form.value.enableAudioBriefing),
       channelTagRouting: tagRouting,
       quietHours: {
         enabled: form.value.quietHoursEnabled,
@@ -1290,6 +1481,16 @@ async function handleUpdateFeed() {
       try { editTagRouting = JSON.parse(editForm.value.channelTagRoutingJson); } catch {}
     }
 
+    const parsedEditAutoReactions = (editForm.value.autoReactionsInput || '')
+      .split(',')
+      .map((s: string) => s.trim())
+      .filter(Boolean);
+
+    const parsedEditBreakingKeywords = (editForm.value.breakingKeywordsInput || '')
+      .split(',')
+      .map((s: string) => s.trim().toUpperCase())
+      .filter(Boolean);
+
     const updated = await autofeedsApi.updateFeed(editingFeed.value.id, {
       name: editForm.value.name,
       channelId: editForm.value.channelId,
@@ -1318,6 +1519,13 @@ async function handleUpdateFeed() {
         suppressMentions: editForm.value.quietHoursSuppressMentions
       },
       maxPostsPerHour: editForm.value.maxPostsPerHour,
+      autoReactions: parsedEditAutoReactions,
+      autoPoll: Boolean(editForm.value.autoPoll),
+      breakingKeywords: parsedEditBreakingKeywords,
+      bypassQuietHours: Boolean(editForm.value.bypassQuietHours),
+      breakingRoleId: editForm.value.breakingRoleId || undefined,
+      autoExpireDays: Number(editForm.value.autoExpireDays || 0),
+      enableAudioBriefing: Boolean(editForm.value.enableAudioBriefing),
       tags: parsedTags,
       filterKeywords: parsedInclude,
       excludeKeywords: parsedExclude
@@ -1389,6 +1597,34 @@ async function handleOpmlExport() {
     showToast('Export OPML téléchargé avec succès !', 'success');
   } catch (err: any) {
     showToast(`Erreur lors de l'export OPML : ${err.message}`, 'error');
+  }
+}
+
+async function handlePurgeExpired() {
+  if (!confirm('Voulez-vous vraiment purger les publications expirées et supprimer les messages Discord correspondants ?')) {
+    return;
+  }
+  purging.value = true;
+  try {
+    const res = await autofeedsApi.purgeExpired();
+    showToast(`🧹 Purge terminée : ${res.expiredCount} publication(s) expirée(s), ${res.deletedMessagesCount} message(s) supprimé(s).`, 'success');
+  } catch (err: any) {
+    showToast(`Erreur lors de la purge : ${err.message}`, 'error');
+  } finally {
+    purging.value = false;
+  }
+}
+
+async function handleAudioBriefing(feed: any) {
+  audioLoadingId.value = feed.id;
+  try {
+    const briefing = await autofeedsApi.getAudioBriefing(feed.id, 5);
+    currentBriefing.value = briefing;
+    showAudioModal.value = true;
+  } catch (err: any) {
+    showToast(`Impossible de générer le flash audio : ${err.message}`, 'error');
+  } finally {
+    audioLoadingId.value = null;
   }
 }
 

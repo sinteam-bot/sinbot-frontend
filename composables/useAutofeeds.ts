@@ -60,6 +60,13 @@ export interface AutofeedItem {
     suppressMentions?: boolean;
   };
   maxPostsPerHour?: number;
+  autoReactions?: string[];
+  autoPoll?: boolean | { question?: string; answers?: string[] };
+  breakingKeywords?: string[];
+  bypassQuietHours?: boolean;
+  breakingRoleId?: string | null;
+  autoExpireDays?: number;
+  enableAudioBriefing?: boolean;
   lastItemId?: string | null;
   lastItemPublishedAt?: number;
   intervalMinutes: number;
@@ -115,6 +122,13 @@ export interface CreateAutofeedPayload {
     suppressMentions?: boolean;
   };
   maxPostsPerHour?: number;
+  autoReactions?: string[];
+  autoPoll?: boolean | { question?: string; answers?: string[] };
+  breakingKeywords?: string[];
+  bypassQuietHours?: boolean;
+  breakingRoleId?: string | null;
+  autoExpireDays?: number;
+  enableAudioBriefing?: boolean;
   guildId?: string;
   filters?: AutofeedFilters;
 }
@@ -238,6 +252,21 @@ function normalizeFeed(item: any): AutofeedItem {
     channelTagRouting: typeof item.channelTagRouting === 'string' ? JSON.parse(item.channelTagRouting || '{}') : (item.channelTagRouting || item.channel_tag_routing || {}),
     quietHours: typeof item.quietHours === 'string' ? JSON.parse(item.quietHours || '{}') : (item.quietHours || item.quiet_hours || {}),
     maxPostsPerHour: Number(item.maxPostsPerHour || item.max_posts_per_hour || 0),
+    autoReactions: Array.isArray(item.autoReactions ?? item.auto_reactions)
+      ? (item.autoReactions ?? item.auto_reactions)
+      : (typeof (item.autoReactions ?? item.auto_reactions) === 'string'
+        ? (() => { try { return JSON.parse(item.autoReactions ?? item.auto_reactions); } catch { return []; } })()
+        : []),
+    autoPoll: item.autoPoll ?? item.auto_poll ?? false,
+    breakingKeywords: Array.isArray(item.breakingKeywords ?? item.breaking_keywords)
+      ? (item.breakingKeywords ?? item.breaking_keywords)
+      : (typeof (item.breakingKeywords ?? item.breaking_keywords) === 'string'
+        ? (() => { try { return JSON.parse(item.breakingKeywords ?? item.breaking_keywords); } catch { return []; } })()
+        : []),
+    bypassQuietHours: Boolean(item.bypassQuietHours ?? item.bypass_quiet_hours ?? false),
+    breakingRoleId: item.breakingRoleId || item.breaking_role_id || null,
+    autoExpireDays: Number(item.autoExpireDays || item.auto_expire_days || 0),
+    enableAudioBriefing: Boolean(item.enableAudioBriefing ?? item.enable_audio_briefing ?? false),
     lastItemId: item.lastItemId || item.last_item_id,
     lastItemPublishedAt: item.lastItemPublishedAt || item.last_item_published_at || 0,
     intervalMinutes: interval,
@@ -446,6 +475,21 @@ export const useAutofeeds = () => {
     return res.data;
   }
 
+  async function purgeExpired(feedId?: string): Promise<{ expiredCount: number; deletedMessagesCount: number }> {
+    const res = await api.apiFetch<{ ok?: boolean; success?: boolean; data: any; error?: string }>('/api/autofeeds/purge', {
+      method: 'POST',
+      body: { feedId } as any
+    });
+    if ((res.ok === false || res.success === false) && res.error) throw new Error(res.error);
+    return res.data || { expiredCount: 0, deletedMessagesCount: 0 };
+  }
+
+  async function getAudioBriefing(feedId: string, limit: number = 5): Promise<{ feedTitle: string; script: string; itemCount: number; filename: string }> {
+    const res = await api.apiFetch<{ ok?: boolean; success?: boolean; data: any; error?: string }>(`/api/autofeeds/${encodeURIComponent(feedId)}/audio?limit=${limit}`);
+    if ((res.ok === false || res.success === false) && res.error) throw new Error(res.error);
+    return res.data;
+  }
+
   return {
     listFeeds,
     fetchFeeds: listFeeds,
@@ -468,6 +512,8 @@ export const useAutofeeds = () => {
     getStats,
     fetchStats: getStats,
     searchItems,
-    claimItem
+    claimItem,
+    purgeExpired,
+    getAudioBriefing
   };
 };
