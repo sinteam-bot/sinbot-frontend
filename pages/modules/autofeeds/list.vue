@@ -11,10 +11,18 @@
         </p>
       </div>
 
-      <div style="display: flex; gap: 8px;">
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
         <button class="module-btn" :disabled="loading" @click="loadData">
           <span>🔄</span>
           <span>Actualiser</span>
+        </button>
+        <button class="module-btn secondary" @click="openOpmlModal">
+          <span>📥</span>
+          <span>Import OPML</span>
+        </button>
+        <button class="module-btn secondary" :disabled="feeds.length === 0" @click="handleOpmlExport">
+          <span>📤</span>
+          <span>Export OPML</span>
         </button>
         <button class="module-btn primary" @click="openCreateModal">
           <span>➕</span>
@@ -325,6 +333,58 @@
                 />
               </div>
 
+              <!-- Webhook Personnalisé -->
+              <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(255, 255, 255, 0.03); border-radius: 6px;">
+                <div>
+                  <label class="form-label" style="margin-bottom: 2px;">🎭 Webhook Personnalisé (Impersonation)</label>
+                  <span class="form-hint" style="margin: 0;">Publie avec le nom et l'avatar du créateur/streamer</span>
+                </div>
+                <input
+                  v-model="form.useWebhook"
+                  type="checkbox"
+                  style="width: 18px; height: 18px; cursor: pointer; accent-color: #5865f2;"
+                />
+              </div>
+
+              <!-- Proxy Médias Avancé -->
+              <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(255, 255, 255, 0.03); border-radius: 6px;">
+                <div>
+                  <label class="form-label" style="margin-bottom: 2px;">🎬 Proxy Médias (FxTwitter & vxTikTok)</label>
+                  <span class="form-hint" style="margin: 0;">Lecteur vidéo natif Discord pour les liens Twitter/X et TikTok</span>
+                </div>
+                <input
+                  v-model="form.enableMediaProxy"
+                  type="checkbox"
+                  style="width: 18px; height: 18px; cursor: pointer; accent-color: #5865f2;"
+                />
+              </div>
+
+              <!-- Ignorer les Shorts YouTube -->
+              <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(255, 255, 255, 0.03); border-radius: 6px;">
+                <div>
+                  <label class="form-label" style="margin-bottom: 2px;">🩳 Filtrer les YouTube Shorts</label>
+                  <span class="form-hint" style="margin: 0;">Ignore les vidéos courtes et ne garde que les vidéos standard</span>
+                </div>
+                <input
+                  v-model="form.ignoreShorts"
+                  type="checkbox"
+                  style="width: 18px; height: 18px; cursor: pointer; accent-color: #5865f2;"
+                />
+              </div>
+
+              <!-- Résumé IA TL;DR & Traduction -->
+              <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(88, 101, 242, 0.06); border-radius: 6px; border: 1px solid rgba(88, 101, 242, 0.2);">
+                <div>
+                  <label class="form-label" style="margin-bottom: 2px;">🤖 Résumé IA (TL;DR) & Traduction (FR)</label>
+                  <span class="form-hint" style="margin: 0;">Génère automatiquement 2-3 points clés et traduit en français</span>
+                </div>
+                <input
+                  v-model="form.aiSummary"
+                  type="checkbox"
+                  style="width: 18px; height: 18px; cursor: pointer; accent-color: #5865f2;"
+                />
+              </div>
+
               <div class="form-group">
                 <label class="form-label">🏷️ Rôle Discord attribué aux abonnés de ce flux</label>
                 <input
@@ -552,6 +612,58 @@
                 />
               </div>
 
+              <!-- Webhook Personnalisé -->
+              <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: rgba(88, 101, 242, 0.08); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(88, 101, 242, 0.2);">
+                <div>
+                  <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🎭 Webhook Personnalisé (Impersonation)</div>
+                  <div style="font-size: 12px; color: var(--text-muted);">Publie avec le nom et l'avatar du créateur/streamer</div>
+                </div>
+                <input
+                  v-model="editForm.useWebhook"
+                  type="checkbox"
+                  style="width: 18px; height: 18px; cursor: pointer; accent-color: #5865f2;"
+                />
+              </div>
+
+              <!-- Proxy Médias Avancé -->
+              <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: rgba(88, 101, 242, 0.08); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(88, 101, 242, 0.2);">
+                <div>
+                  <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🎬 Proxy Médias (FxTwitter & vxTikTok)</div>
+                  <div style="font-size: 12px; color: var(--text-muted);">Lecteur vidéo natif Discord pour les liens Twitter/X et TikTok</div>
+                </div>
+                <input
+                  v-model="editForm.enableMediaProxy"
+                  type="checkbox"
+                  style="width: 18px; height: 18px; cursor: pointer; accent-color: #5865f2;"
+                />
+              </div>
+
+              <!-- Ignorer les Shorts YouTube -->
+              <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: rgba(88, 101, 242, 0.08); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(88, 101, 242, 0.2);">
+                <div>
+                  <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🩳 Filtrer les YouTube Shorts</div>
+                  <div style="font-size: 12px; color: var(--text-muted);">Ignore les vidéos courtes et ne garde que les vidéos standard</div>
+                </div>
+                <input
+                  v-model="editForm.ignoreShorts"
+                  type="checkbox"
+                  style="width: 18px; height: 18px; cursor: pointer; accent-color: #5865f2;"
+                />
+              </div>
+
+              <!-- Résumé IA TL;DR & Traduction -->
+              <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: rgba(88, 101, 242, 0.08); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(88, 101, 242, 0.2);">
+                <div>
+                  <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🤖 Résumé IA (TL;DR) & Traduction (FR)</div>
+                  <div style="font-size: 12px; color: var(--text-muted);">Génère automatiquement 2-3 points clés et traduit en français</div>
+                </div>
+                <input
+                  v-model="editForm.aiSummary"
+                  type="checkbox"
+                  style="width: 18px; height: 18px; cursor: pointer; accent-color: #5865f2;"
+                />
+              </div>
+
               <div class="form-group">
                 <label class="form-label">🏷️ Rôle Discord attribué aux abonnés de ce flux</label>
                 <input
@@ -595,6 +707,53 @@
         </form>
       </div>
     </div>
+
+    <!-- Modal d'import OPML -->
+    <div v-if="showOpmlModal" class="modal-backdrop" @click.self="showOpmlModal = false">
+      <div class="modal-card" style="max-width: 520px;">
+        <div class="modal-header">
+          <h3 style="margin: 0; font-size: 16px; color: var(--header-primary); display: flex; align-items: center; gap: 8px;">
+            <span>📥</span> Importer un catalogue OPML
+          </h3>
+          <button class="close-btn" @click="showOpmlModal = false">✕</button>
+        </div>
+
+        <form class="modal-form" @submit.prevent="handleOpmlSubmit">
+          <div class="form-group">
+            <label class="form-label">Salon Discord cible *</label>
+            <DiscordChannelSelect
+              v-model="opmlChannelId"
+              :required="true"
+              placeholder="Sélectionnez le salon de publication..."
+            />
+            <span class="form-hint">Les flux importés publieront automatiquement dans ce salon.</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Fichier OPML (.opml, .xml) *</label>
+            <input
+              type="file"
+              accept=".opml,.xml"
+              class="form-input"
+              @change="handleOpmlFileChange"
+              required
+            />
+            <span v-if="opmlFileName" class="form-hint" style="color: #57f287;">
+              ✓ Fichier sélectionné : {{ opmlFileName }}
+            </span>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="module-btn" @click="showOpmlModal = false">
+              Annuler
+            </button>
+            <button type="submit" class="module-btn primary" :disabled="opmlImporting || !opmlChannelId || !opmlContent">
+              <span>{{ opmlImporting ? '⏳ Importation en cours...' : '📥 Lancer l\'import' }}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -629,6 +788,12 @@ const editTagsInput = ref('');
 const editIncludeInput = ref('');
 const editExcludeInput = ref('');
 
+const showOpmlModal = ref(false);
+const opmlChannelId = ref('');
+const opmlContent = ref('');
+const opmlFileName = ref('');
+const opmlImporting = ref(false);
+
 const form = ref<CreateAutofeedPayload>({
   url: '',
   name: '',
@@ -645,7 +810,11 @@ const form = ref<CreateAutofeedPayload>({
   pingRoleId: '',
   createThread: false,
   subscriberRoleId: '',
-  notificationDelivery: 'channel'
+  notificationDelivery: 'channel',
+  useWebhook: false,
+  enableMediaProxy: false,
+  ignoreShorts: false,
+  aiSummary: false
 });
 
 const editForm = ref({
@@ -658,7 +827,11 @@ const editForm = ref({
   pingRoleId: '',
   createThread: false,
   subscriberRoleId: '',
-  notificationDelivery: 'channel' as 'channel' | 'dm' | 'both' | 'role'
+  notificationDelivery: 'channel' as 'channel' | 'dm' | 'both' | 'role',
+  useWebhook: false,
+  enableMediaProxy: false,
+  ignoreShorts: false,
+  aiSummary: false
 });
 
 function isLiveProvider(provider?: string): boolean {
@@ -745,7 +918,11 @@ function openCreateModal() {
     pingRoleId: '',
     createThread: false,
     subscriberRoleId: '',
-    notificationDelivery: 'channel'
+    notificationDelivery: 'channel',
+    useWebhook: false,
+    enableMediaProxy: false,
+    ignoreShorts: false,
+    aiSummary: false
   };
   tagsInput.value = '';
   includeKeywordsInput.value = '';
@@ -767,7 +944,11 @@ function openEditModal(feed: AutofeedItem) {
     pingRoleId: feed.pingRoleId || '',
     createThread: Boolean(feed.createThread),
     subscriberRoleId: feed.subscriberRoleId || '',
-    notificationDelivery: (feed.notificationDelivery as any) || 'channel'
+    notificationDelivery: (feed.notificationDelivery as any) || 'channel',
+    useWebhook: Boolean(feed.useWebhook),
+    enableMediaProxy: Boolean(feed.enableMediaProxy),
+    ignoreShorts: Boolean(feed.ignoreShorts),
+    aiSummary: Boolean(feed.aiSummary)
   };
   editTagsInput.value = (feed.tags || []).join(', ');
   editIncludeInput.value = (feed.filterKeywords || []).join(', ');
@@ -874,6 +1055,10 @@ async function handleUpdateFeed() {
       createThread: editForm.value.createThread,
       subscriberRoleId: editForm.value.subscriberRoleId || undefined,
       notificationDelivery: editForm.value.notificationDelivery,
+      useWebhook: editForm.value.useWebhook,
+      enableMediaProxy: editForm.value.enableMediaProxy,
+      ignoreShorts: editForm.value.ignoreShorts,
+      aiSummary: editForm.value.aiSummary,
       tags: parsedTags,
       filterKeywords: parsedInclude,
       excludeKeywords: parsedExclude
@@ -890,6 +1075,61 @@ async function handleUpdateFeed() {
     showToast(`Erreur mise à jour : ${err.message}`, 'error');
   } finally {
     submitting.value = false;
+  }
+}
+
+function openOpmlModal() {
+  opmlChannelId.value = '';
+  opmlContent.value = '';
+  opmlFileName.value = '';
+  showOpmlModal.value = true;
+}
+
+function handleOpmlFileChange(event: Event) {
+  const target = event.target as HTMLInputElement;
+  const file = target?.files?.[0];
+  if (!file) return;
+  opmlFileName.value = file.name;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    opmlContent.value = (e.target?.result as string) || '';
+  };
+  reader.readAsText(file);
+}
+
+async function handleOpmlSubmit() {
+  if (!opmlChannelId.value || !opmlContent.value) {
+    showToast('Veuillez sélectionner un salon Discord et charger un fichier OPML.', 'warning');
+    return;
+  }
+  opmlImporting.value = true;
+  try {
+    const res = await autofeedsApi.importOpml(opmlChannelId.value, opmlContent.value);
+    showToast(`✅ ${res.importedCount} flux importé(s) avec succès !`, 'success');
+    showOpmlModal.value = false;
+    await loadData();
+  } catch (err: any) {
+    showToast(`Erreur lors de l'import OPML : ${err.message}`, 'error');
+  } finally {
+    opmlImporting.value = false;
+  }
+}
+
+async function handleOpmlExport() {
+  try {
+    const xml = await autofeedsApi.exportOpml();
+    const blob = new Blob([xml], { type: 'application/xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `autofeeds-export-${Date.now()}.opml`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Export OPML téléchargé avec succès !', 'success');
+  } catch (err: any) {
+    showToast(`Erreur lors de l'export OPML : ${err.message}`, 'error');
   }
 }
 

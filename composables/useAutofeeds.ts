@@ -42,6 +42,11 @@ export interface AutofeedItem {
   notificationDelivery?: 'channel' | 'dm' | 'both' | 'role';
   createThread?: boolean;
   threadAutoArchiveDuration?: number;
+  useWebhook?: boolean;
+  enableMediaProxy?: boolean;
+  ignoreShorts?: boolean;
+  aiSummary?: boolean;
+  aiTranslate?: boolean;
   lastItemId?: string | null;
   lastItemPublishedAt?: number;
   intervalMinutes: number;
@@ -79,6 +84,11 @@ export interface CreateAutofeedPayload {
   notificationDelivery?: 'channel' | 'dm' | 'both' | 'role';
   createThread?: boolean;
   threadAutoArchiveDuration?: number;
+  useWebhook?: boolean;
+  enableMediaProxy?: boolean;
+  ignoreShorts?: boolean;
+  aiSummary?: boolean;
+  aiTranslate?: boolean;
   guildId?: string;
   filters?: AutofeedFilters;
 }
@@ -154,6 +164,11 @@ function normalizeFeed(item: any): AutofeedItem {
     notificationDelivery: item.notificationDelivery || item.notification_delivery || 'channel',
     createThread: Boolean(item.createThread ?? item.create_thread ?? false),
     threadAutoArchiveDuration: item.threadAutoArchiveDuration || item.thread_auto_archive_duration || 1440,
+    useWebhook: Boolean(item.useWebhook ?? item.use_webhook ?? false),
+    enableMediaProxy: Boolean(item.enableMediaProxy ?? item.enable_media_proxy ?? false),
+    ignoreShorts: Boolean(item.ignoreShorts ?? item.ignore_shorts ?? false),
+    aiSummary: Boolean(item.aiSummary ?? item.ai_summary ?? false),
+    aiTranslate: Boolean(item.aiTranslate ?? item.ai_translate ?? false),
     lastItemId: item.lastItemId || item.last_item_id,
     lastItemPublishedAt: item.lastItemPublishedAt || item.last_item_published_at || 0,
     intervalMinutes: interval,
@@ -307,6 +322,21 @@ export const useAutofeeds = () => {
     return true;
   }
 
+  async function importOpml(channelId: string, opmlXml: string, guildId?: string): Promise<{ importedCount: number; errors: any[] }> {
+    const res = await api.apiFetch<{ ok?: boolean; success?: boolean; data: any; error?: string }>('/api/autofeeds/opml/import', {
+      method: 'POST',
+      body: { channelId, opmlXml, guildId } as any
+    });
+    if ((res.ok === false || res.success === false) && res.error) throw new Error(res.error);
+    return res.data;
+  }
+
+  async function exportOpml(guildId?: string): Promise<string> {
+    const qs = guildId ? `?guild_id=${encodeURIComponent(guildId)}` : '';
+    const xml = await api.apiFetch<string>(`/api/autofeeds/opml/export${qs}`);
+    return xml;
+  }
+
   return {
     listFeeds,
     fetchFeeds: listFeeds,
@@ -323,6 +353,8 @@ export const useAutofeeds = () => {
     listSubscriptions,
     fetchSubscriptions: listSubscriptions,
     createSubscription,
-    deleteSubscription
+    deleteSubscription,
+    importOpml,
+    exportOpml
   };
 };
