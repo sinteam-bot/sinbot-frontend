@@ -81,6 +81,10 @@ export interface AutofeedItem {
   enableStoryClustering?: boolean;
   clusterMode?: 'merge' | 'skip';
   enableVideoSummary?: boolean;
+  autoSmartTag?: boolean;
+  syncToKnowledgeBase?: boolean;
+  knowledgeBaseType?: 'obsidian' | 'notion' | 'markdown';
+  knowledgeWebhookUrl?: string | null;
   lastItemId?: string | null;
   lastItemPublishedAt?: number;
   intervalMinutes: number;
@@ -157,6 +161,10 @@ export interface CreateAutofeedPayload {
   enableStoryClustering?: boolean;
   clusterMode?: 'merge' | 'skip';
   enableVideoSummary?: boolean;
+  autoSmartTag?: boolean;
+  syncToKnowledgeBase?: boolean;
+  knowledgeBaseType?: 'obsidian' | 'notion' | 'markdown';
+  knowledgeWebhookUrl?: string | null;
   guildId?: string;
   filters?: AutofeedFilters;
 }
@@ -241,6 +249,66 @@ export interface AutofeedClaimResult {
   alreadyClaimed: boolean;
   claimsCount: number;
   xpAwarded?: number;
+}
+
+export interface InvestigationResult {
+  topic?: string;
+  count?: number;
+  timeline?: Array<{ date: string; title: string; link?: string; feed?: string }>;
+  consensus?: string;
+  perspectives?: {
+    pour?: string[];
+    pros?: string[];
+    contre?: string[];
+    cons?: string[];
+  };
+  reliabilityScore?: number;
+  verdict?: string;
+  sourceArticles?: any[];
+}
+
+export interface ReleaseReminder {
+  id: string;
+  guildId: string;
+  userId: string;
+  historyId?: string | null;
+  itemTitle: string;
+  itemUrl?: string | null;
+  targetDate: string;
+  isNotified: boolean;
+  notifiedAt?: number | null;
+  createdAt: number;
+}
+
+export interface TriviaQuiz {
+  id: string;
+  guildId: string;
+  channelId?: string | null;
+  theme: string;
+  question: string;
+  options: string[];
+  correctOptionIndex?: number;
+  explanation?: string;
+  sourceUrl?: string | null;
+  xpReward: number;
+  isActive: boolean;
+  createdAt: number;
+}
+
+export interface PredictionMarket {
+  id: string;
+  guildId: string;
+  channelId?: string | null;
+  title: string;
+  description?: string | null;
+  options: string[];
+  status: 'open' | 'closed' | 'resolved' | 'cancelled';
+  winningOptionIndex?: number | null;
+  totalPool: number;
+  optionsPool: number[];
+  closesAt?: number | null;
+  createdBy?: string | null;
+  createdAt: number;
 }
 
 export interface AutofeedPreset {
@@ -632,6 +700,77 @@ export const useAutofeeds = () => {
     return res.data;
   }
 
+  async function investigateTopic(topic: string, guildId?: string): Promise<InvestigationResult> {
+    const params = new URLSearchParams();
+    if (topic) params.set('topic', topic);
+    if (guildId) params.set('guild_id', guildId);
+    const res = await api.apiFetch<{ ok?: boolean; success?: boolean; data: InvestigationResult; error?: string }>(`/api/autofeeds/investigate?${params.toString()}`);
+    if ((res.ok === false || res.success === false) && res.error) throw new Error(res.error);
+    return res.data;
+  }
+
+  async function factCheckArticle(payload: { title: string; content?: string; url?: string }): Promise<any> {
+    const res = await api.apiFetch<{ ok?: boolean; success?: boolean; data: any; error?: string }>('/api/autofeeds/fact-check', {
+      method: 'POST',
+      body: payload as any
+    });
+    if ((res.ok === false || res.success === false) && res.error) throw new Error(res.error);
+    return res.data;
+  }
+
+  async function listReminders(userId: string, guildId?: string): Promise<ReleaseReminder[]> {
+    const params = new URLSearchParams();
+    if (guildId) params.set('guild_id', guildId);
+    const res = await api.apiFetch<{ ok?: boolean; success?: boolean; data: ReleaseReminder[]; error?: string }>(`/api/autofeeds/reminders/${encodeURIComponent(userId)}?${params.toString()}`);
+    if ((res.ok === false || res.success === false) && res.error) throw new Error(res.error);
+    return res.data || [];
+  }
+
+  async function createReminder(payload: { title: string; releaseDate: string; guildId?: string; userId?: string; url?: string; channelId?: string; reminderNote?: string }): Promise<ReleaseReminder> {
+    const res = await api.apiFetch<{ ok?: boolean; success?: boolean; data: ReleaseReminder; error?: string }>('/api/autofeeds/reminders', {
+      method: 'POST',
+      body: payload as any
+    });
+    if ((res.ok === false || res.success === false) && res.error) throw new Error(res.error);
+    return res.data;
+  }
+
+  async function listPredictions(guildId?: string, status?: string): Promise<PredictionMarket[]> {
+    const params = new URLSearchParams();
+    if (guildId) params.set('guild_id', guildId);
+    if (status) params.set('status', status);
+    const res = await api.apiFetch<{ ok?: boolean; success?: boolean; data: PredictionMarket[]; error?: string }>(`/api/autofeeds/predictions?${params.toString()}`);
+    if ((res.ok === false || res.success === false) && res.error) throw new Error(res.error);
+    return res.data || [];
+  }
+
+  async function placeBet(payload: { predictionId: string; optionIndex: number; amountXp: number; guildId?: string }): Promise<any> {
+    const res = await api.apiFetch<{ ok?: boolean; success?: boolean; data: any; error?: string }>('/api/autofeeds/predictions/bet', {
+      method: 'POST',
+      body: payload as any
+    });
+    if ((res.ok === false || res.success === false) && res.error) throw new Error(res.error);
+    return res.data;
+  }
+
+  async function generateTriviaQuiz(payload?: { guildId?: string; channelId?: string; xpReward?: number }): Promise<TriviaQuiz> {
+    const res = await api.apiFetch<{ ok?: boolean; success?: boolean; data: TriviaQuiz; error?: string }>('/api/autofeeds/trivia', {
+      method: 'POST',
+      body: payload as any
+    });
+    if ((res.ok === false || res.success === false) && res.error) throw new Error(res.error);
+    return res.data;
+  }
+
+  async function exportKnowledge(item: any, type: string = 'obsidian'): Promise<{ markdown: string; title: string; tags: string[] }> {
+    const res = await api.apiFetch<{ ok?: boolean; success?: boolean; data: any; error?: string }>('/api/autofeeds/knowledge/export', {
+      method: 'POST',
+      body: { item, type } as any
+    });
+    if ((res.ok === false || res.success === false) && res.error) throw new Error(res.error);
+    return res.data;
+  }
+
   return {
     listFeeds,
     fetchFeeds: listFeeds,
@@ -665,6 +804,14 @@ export const useAutofeeds = () => {
     approveModerationItem,
     rejectModerationItem,
     askArticleQuestion,
-    summarizeYouTubeVideo
+    summarizeYouTubeVideo,
+    investigateTopic,
+    factCheckArticle,
+    listReminders,
+    createReminder,
+    listPredictions,
+    placeBet,
+    generateTriviaQuiz,
+    exportKnowledge
   };
 };

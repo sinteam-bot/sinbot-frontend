@@ -262,6 +262,22 @@
             <span>Interroge l'assistant IA dédié à propos d'un article ou d'une actualité</span>
           </div>
           <div class="command-row">
+            <code>/feed investigate &lt;sujet&gt;</code>
+            <span>Méta-enquête IA, frise chronologique &amp; analyse critique Pour/Contre</span>
+          </div>
+          <div class="command-row">
+            <code>/feed remind-me [titre] [date]</code>
+            <span>Rappel personnel en DM pour une date de sortie de jeu ou un événement</span>
+          </div>
+          <div class="command-row">
+            <code>/feed trivia [theme]</code>
+            <span>Quiz d'actualités communautaire QCM avec récompenses en XP</span>
+          </div>
+          <div class="command-row">
+            <code>/feed predict &lt;titre&gt;</code>
+            <span>Marché de prédictions &amp; paris communautaires avec pool d'XP</span>
+          </div>
+          <div class="command-row">
             <code>/feed list</code>
             <span>Affiche la liste de tous les flux actifs sur le serveur</span>
           </div>

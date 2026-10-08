@@ -195,6 +195,14 @@
             <span class="meta-icon">🎥</span>
             <span class="meta-text">Résumé Vidéo</span>
           </div>
+          <div v-if="feed.autoSmartTag" class="meta-item" title="Smart Tagging & Taxonomie IA Automatique">
+            <span class="meta-icon">🏷️</span>
+            <span class="meta-text">Smart Tag</span>
+          </div>
+          <div v-if="feed.syncToKnowledgeBase" class="meta-item" title="Synchronisation Wiki & Base de Connaissances">
+            <span class="meta-icon">📚</span>
+            <span class="meta-text">Wiki Sync</span>
+          </div>
         </div>
 
         <!-- Tags -->
@@ -809,6 +817,42 @@
                   <input v-model="form.enableVideoSummary" type="checkbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: #dc2626;" />
                 </div>
               </div>
+
+              <!-- 🏷️ Smart Tagging & Taxonomie IA Automatique -->
+              <div class="form-group" style="background: rgba(16, 185, 129, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.2); margin-top: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <div>
+                    <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🏷️ Smart Tagging & Taxonomie IA (Zéro-Config)</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">Attribution automatique de tags normalisés (plateformes, genres, thèmes)</div>
+                  </div>
+                  <input v-model="form.autoSmartTag" type="checkbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: #10b981;" />
+                </div>
+              </div>
+
+              <!-- 📚 Synchronisation Wiki & Base de Connaissances -->
+              <div class="form-group" style="background: rgba(99, 102, 241, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.2); margin-top: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                  <div>
+                    <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">📚 Synchronisation Wiki & Base de Connaissances</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">Exporte les articles en Markdown enrichi (Obsidian / Notion / Webhook)</div>
+                  </div>
+                  <input v-model="form.syncToKnowledgeBase" type="checkbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: #6366f1;" />
+                </div>
+                <div v-if="form.syncToKnowledgeBase" style="padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.1); display: flex; flex-direction: column; gap: 8px;">
+                  <div>
+                    <label class="form-label" style="font-size: 11px;">Format de documentation</label>
+                    <select v-model="form.knowledgeBaseType" class="form-select">
+                      <option value="obsidian">Obsidian (Markdown + Frontmatter YAML & Tags)</option>
+                      <option value="notion">Notion (Blocs structurés & Métadonnées)</option>
+                      <option value="markdown">Markdown Standard</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="form-label" style="font-size: 11px;">URL Webhook de synchronisation (Optionnel)</label>
+                    <input v-model="form.knowledgeWebhookUrl" type="url" class="form-input" placeholder="https://notion.so/api/... ou webhook Obsidian Local REST" />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1299,6 +1343,42 @@
             </div>
           </div>
 
+          <!-- 🏷️ Smart Tagging & Taxonomie IA Automatique -->
+          <div class="form-group" style="background: rgba(16, 185, 129, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.2); margin-top: 10px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🏷️ Smart Tagging & Taxonomie IA (Zéro-Config)</div>
+                <div style="font-size: 12px; color: var(--text-muted);">Attribution automatique de tags normalisés (plateformes, genres, thèmes)</div>
+              </div>
+              <input v-model="editForm.autoSmartTag" type="checkbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: #10b981;" />
+            </div>
+          </div>
+
+          <!-- 📚 Synchronisation Wiki & Base de Connaissances -->
+          <div class="form-group" style="background: rgba(99, 102, 241, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.2); margin-top: 10px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+              <div>
+                <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">📚 Synchronisation Wiki & Base de Connaissances</div>
+                <div style="font-size: 12px; color: var(--text-muted);">Exporte les articles en Markdown enrichi (Obsidian / Notion / Webhook)</div>
+              </div>
+              <input v-model="editForm.syncToKnowledgeBase" type="checkbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: #6366f1;" />
+            </div>
+            <div v-if="editForm.syncToKnowledgeBase" style="padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.1); display: flex; flex-direction: column; gap: 8px;">
+              <div>
+                <label class="form-label" style="font-size: 11px;">Format de documentation</label>
+                <select v-model="editForm.knowledgeBaseType" class="form-select">
+                  <option value="obsidian">Obsidian (Markdown + Frontmatter YAML & Tags)</option>
+                  <option value="notion">Notion (Blocs structurés & Métadonnées)</option>
+                  <option value="markdown">Markdown Standard</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" style="font-size: 11px;">URL Webhook de synchronisation (Optionnel)</label>
+                <input v-model="editForm.knowledgeWebhookUrl" type="url" class="form-input" placeholder="https://notion.so/api/... ou webhook Obsidian Local REST" />
+              </div>
+            </div>
+          </div>
+
           <div class="modal-footer">
             <button type="button" class="module-btn" @click="showEditModal = false">
               Annuler
@@ -1542,7 +1622,11 @@ const form = ref<any>({
   moderationChannelId: '',
   enableStoryClustering: false,
   clusterMode: 'merge' as 'merge' | 'skip',
-  enableVideoSummary: false
+  enableVideoSummary: false,
+  autoSmartTag: false,
+  syncToKnowledgeBase: false,
+  knowledgeBaseType: 'obsidian' as 'obsidian' | 'notion' | 'markdown',
+  knowledgeWebhookUrl: ''
 });
 
 const editForm = ref({
@@ -1591,7 +1675,11 @@ const editForm = ref({
   moderationChannelId: '',
   enableStoryClustering: false,
   clusterMode: 'merge' as 'merge' | 'skip',
-  enableVideoSummary: false
+  enableVideoSummary: false,
+  autoSmartTag: false,
+  syncToKnowledgeBase: false,
+  knowledgeBaseType: 'obsidian' as 'obsidian' | 'notion' | 'markdown',
+  knowledgeWebhookUrl: ''
 });
 
 function isLiveProvider(provider?: string): boolean {
@@ -1714,7 +1802,11 @@ function openCreateModal() {
     moderationChannelId: '',
     enableStoryClustering: false,
     clusterMode: 'merge' as 'merge' | 'skip',
-    enableVideoSummary: false
+    enableVideoSummary: false,
+    autoSmartTag: false,
+    syncToKnowledgeBase: false,
+    knowledgeBaseType: 'obsidian' as 'obsidian' | 'notion' | 'markdown',
+    knowledgeWebhookUrl: ''
   };
   tagsInput.value = '';
   includeKeywordsInput.value = '';
@@ -1772,7 +1864,11 @@ function openEditModal(feed: AutofeedItem) {
     moderationChannelId: feed.moderationChannelId || '',
     enableStoryClustering: Boolean(feed.enableStoryClustering),
     clusterMode: feed.clusterMode || 'merge',
-    enableVideoSummary: Boolean(feed.enableVideoSummary)
+    enableVideoSummary: Boolean(feed.enableVideoSummary),
+    autoSmartTag: Boolean(feed.autoSmartTag),
+    syncToKnowledgeBase: Boolean(feed.syncToKnowledgeBase),
+    knowledgeBaseType: (feed.knowledgeBaseType as any) || 'obsidian',
+    knowledgeWebhookUrl: feed.knowledgeWebhookUrl || ''
   };
   editTagsInput.value = (feed.tags || []).join(', ');
   editIncludeInput.value = (feed.filterKeywords || []).join(', ');
@@ -1886,6 +1982,10 @@ async function handleCreateFeed() {
       enableStoryClustering: Boolean(form.value.enableStoryClustering),
       clusterMode: form.value.clusterMode || 'merge',
       enableVideoSummary: Boolean(form.value.enableVideoSummary),
+      autoSmartTag: Boolean(form.value.autoSmartTag),
+      syncToKnowledgeBase: Boolean(form.value.syncToKnowledgeBase),
+      knowledgeBaseType: form.value.knowledgeBaseType,
+      knowledgeWebhookUrl: form.value.knowledgeWebhookUrl || undefined,
       channelTagRouting: tagRouting,
       quietHours: {
         enabled: form.value.quietHoursEnabled,
@@ -1979,6 +2079,10 @@ async function handleUpdateFeed() {
       enableStoryClustering: Boolean(editForm.value.enableStoryClustering),
       clusterMode: editForm.value.clusterMode || 'merge',
       enableVideoSummary: Boolean(editForm.value.enableVideoSummary),
+      autoSmartTag: Boolean(editForm.value.autoSmartTag),
+      syncToKnowledgeBase: Boolean(editForm.value.syncToKnowledgeBase),
+      knowledgeBaseType: editForm.value.knowledgeBaseType,
+      knowledgeWebhookUrl: editForm.value.knowledgeWebhookUrl || null,
       tags: parsedTags,
       filterKeywords: parsedInclude,
       excludeKeywords: parsedExclude
