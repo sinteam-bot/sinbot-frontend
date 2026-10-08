@@ -74,6 +74,13 @@ export interface AutofeedItem {
   autoSyncEvents?: boolean;
   goodVibesOnly?: boolean;
   enableSecurityScan?: boolean;
+  translateTitleToFr?: boolean;
+  antiClickbait?: boolean;
+  requireApproval?: boolean;
+  moderationChannelId?: string | null;
+  enableStoryClustering?: boolean;
+  clusterMode?: 'merge' | 'skip';
+  enableVideoSummary?: boolean;
   lastItemId?: string | null;
   lastItemPublishedAt?: number;
   intervalMinutes: number;
@@ -143,6 +150,13 @@ export interface CreateAutofeedPayload {
   autoSyncEvents?: boolean;
   goodVibesOnly?: boolean;
   enableSecurityScan?: boolean;
+  translateTitleToFr?: boolean;
+  antiClickbait?: boolean;
+  requireApproval?: boolean;
+  moderationChannelId?: string | null;
+  enableStoryClustering?: boolean;
+  clusterMode?: 'merge' | 'skip';
+  enableVideoSummary?: boolean;
   guildId?: string;
   filters?: AutofeedFilters;
 }
@@ -166,6 +180,32 @@ export interface VoteStats {
   downvotes: number;
   score: number;
   totalVotes: number;
+}
+
+export interface UserDigestSchedule {
+  id?: string;
+  guildId: string;
+  userId: string;
+  scheduleTime: string;
+  isEnabled: boolean;
+  lastSentAt?: number | null;
+}
+
+export interface ModerationPendingItem {
+  id: string;
+  feedId: string;
+  feedName?: string;
+  guildId: string;
+  channelId: string;
+  guid: string;
+  link: string;
+  title: string;
+  itemAuthor?: string;
+  itemContent?: string;
+  tags?: string[];
+  postedAt: number;
+  isPendingApproval: boolean;
+  relatedSources?: Array<{ name?: string; title?: string; link?: string; url?: string }>;
 }
 
 export interface AutofeedStats {
@@ -537,6 +577,61 @@ export const useAutofeeds = () => {
     return res.data;
   }
 
+  async function getUserDigest(guildId: string, userId: string): Promise<UserDigestSchedule | null> {
+    const res = await api.apiFetch<{ ok?: boolean; success?: boolean; data: UserDigestSchedule | null; error?: string }>(`/api/autofeeds/user-digest?guildId=${encodeURIComponent(guildId)}&userId=${encodeURIComponent(userId)}`);
+    if ((res.ok === false || res.success === false) && res.error) throw new Error(res.error);
+    return res.data;
+  }
+
+  async function setUserDigest(guildId: string, userId: string, scheduleTime: string = '08:00', isEnabled: boolean = true): Promise<UserDigestSchedule> {
+    const res = await api.apiFetch<{ ok?: boolean; success?: boolean; data: UserDigestSchedule; error?: string }>('/api/autofeeds/user-digest', {
+      method: 'POST',
+      body: { guildId, userId, scheduleTime, isEnabled } as any
+    });
+    if ((res.ok === false || res.success === false) && res.error) throw new Error(res.error);
+    return res.data;
+  }
+
+  async function getPendingModeration(guildId: string): Promise<ModerationPendingItem[]> {
+    const res = await api.apiFetch<{ ok?: boolean; success?: boolean; data: ModerationPendingItem[]; error?: string }>(`/api/autofeeds/moderation/pending?guildId=${encodeURIComponent(guildId)}`);
+    if ((res.ok === false || res.success === false) && res.error) throw new Error(res.error);
+    return res.data || [];
+  }
+
+  async function approveModerationItem(id: string): Promise<{ ok: boolean; messageId?: string; channelId?: string }> {
+    const res = await api.apiFetch<{ ok?: boolean; success?: boolean; data: any; error?: string }>(`/api/autofeeds/moderation/${encodeURIComponent(id)}/approve`, {
+      method: 'POST'
+    });
+    if ((res.ok === false || res.success === false) && res.error) throw new Error(res.error);
+    return res.data || { ok: true };
+  }
+
+  async function rejectModerationItem(id: string): Promise<{ ok: boolean }> {
+    const res = await api.apiFetch<{ ok?: boolean; success?: boolean; data: any; error?: string }>(`/api/autofeeds/moderation/${encodeURIComponent(id)}/reject`, {
+      method: 'POST'
+    });
+    if ((res.ok === false || res.success === false) && res.error) throw new Error(res.error);
+    return res.data || { ok: true };
+  }
+
+  async function askArticleQuestion(payload: { url: string; question: string; articleTitle?: string; articleContent?: string }): Promise<{ answer: string; cached?: boolean }> {
+    const res = await api.apiFetch<{ ok?: boolean; success?: boolean; data: any; error?: string }>('/api/autofeeds/qa', {
+      method: 'POST',
+      body: payload as any
+    });
+    if ((res.ok === false || res.success === false) && res.error) throw new Error(res.error);
+    return res.data;
+  }
+
+  async function summarizeYouTubeVideo(payload: { url: string; videoId?: string; title?: string; description?: string }): Promise<{ summary: string; bullets: string[]; cached?: boolean }> {
+    const res = await api.apiFetch<{ ok?: boolean; success?: boolean; data: any; error?: string }>('/api/autofeeds/video-summary', {
+      method: 'POST',
+      body: payload as any
+    });
+    if ((res.ok === false || res.success === false) && res.error) throw new Error(res.error);
+    return res.data;
+  }
+
   return {
     listFeeds,
     fetchFeeds: listFeeds,
@@ -563,6 +658,13 @@ export const useAutofeeds = () => {
     purgeExpired,
     getAudioBriefing,
     getReaderArticle,
-    getVotes
+    getVotes,
+    getUserDigest,
+    setUserDigest,
+    getPendingModeration,
+    approveModerationItem,
+    rejectModerationItem,
+    askArticleQuestion,
+    summarizeYouTubeVideo
   };
 };

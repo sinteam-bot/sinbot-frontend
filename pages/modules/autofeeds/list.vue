@@ -175,6 +175,26 @@
             <span class="meta-icon">🛡️</span>
             <span class="meta-text">Shield</span>
           </div>
+          <div v-if="feed.translateTitleToFr" class="meta-item" title="Traduction automatique du titre en français">
+            <span class="meta-icon">🌐</span>
+            <span class="meta-text">Traduction FR</span>
+          </div>
+          <div v-if="feed.antiClickbait" class="meta-item" title="Titres factuels anti-sensationnalisme">
+            <span class="meta-icon">🔍</span>
+            <span class="meta-text">Anti-Clickbait</span>
+          </div>
+          <div v-if="feed.requireApproval" class="meta-item" title="Validation manuelle requise en modération">
+            <span class="meta-icon">🛡️</span>
+            <span class="meta-text">Modération</span>
+          </div>
+          <div v-if="feed.enableStoryClustering" class="meta-item" title="Dé-duplication multi-flux sémantique">
+            <span class="meta-icon">🤖</span>
+            <span class="meta-text">Cluster</span>
+          </div>
+          <div v-if="feed.enableVideoSummary" class="meta-item" title="Résumeur vidéo YouTube automatique">
+            <span class="meta-icon">🎥</span>
+            <span class="meta-text">Résumé Vidéo</span>
+          </div>
         </div>
 
         <!-- Tags -->
@@ -723,6 +743,72 @@
                   <input v-model="form.enableSecurityScan" type="checkbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: #6366f1;" />
                 </div>
               </div>
+
+              <!-- 🌐 Traduction Intelligente du Titre en Français -->
+              <div class="form-group" style="background: rgba(59, 130, 246, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.2); margin-top: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <div>
+                    <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🌐 Traduction des Titres en Français</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">Traduit automatiquement les titres en langue étrangère (avec badge 🇫🇷)</div>
+                  </div>
+                  <input v-model="form.translateTitleToFr" type="checkbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: #3b82f6;" />
+                </div>
+              </div>
+
+              <!-- 🔍 Dé-clickbaiteur & Titres Factuels -->
+              <div class="form-group" style="background: rgba(14, 165, 233, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(14, 165, 233, 0.2); margin-top: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <div>
+                    <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🔍 Anti-Clickbait & Titres Factuels</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">Neutralise les titres racoleurs en reformulations claires et neutres</div>
+                  </div>
+                  <input v-model="form.antiClickbait" type="checkbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0ea5e9;" />
+                </div>
+              </div>
+
+              <!-- 🛡️ Salle d'Attente & Validation Manuelle -->
+              <div class="form-group" style="background: rgba(239, 68, 68, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2); margin-top: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                  <div>
+                    <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🛡️ Salle d'Attente & Validation Manuelle</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">Achemine les actualités vers un salon de modération avant publication</div>
+                  </div>
+                  <input v-model="form.requireApproval" type="checkbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: #ef4444;" />
+                </div>
+                <div v-if="form.requireApproval" style="padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.1);">
+                  <label class="form-label" style="font-size: 11px;">Salon de modération Discord</label>
+                  <DiscordChannelSelect v-model="form.moderationChannelId" placeholder="Sélectionner le salon de modération" />
+                </div>
+              </div>
+
+              <!-- 🤖 Dé-duplication Sémantique Multi-Flux -->
+              <div class="form-group" style="background: rgba(168, 85, 247, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(168, 85, 247, 0.2); margin-top: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                  <div>
+                    <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🤖 Dé-duplication Multi-Flux (Story Clustering)</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">Regroupe les doublons d'actualités traitant du même événement</div>
+                  </div>
+                  <input v-model="form.enableStoryClustering" type="checkbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: #a855f7;" />
+                </div>
+                <div v-if="form.enableStoryClustering" style="padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.1);">
+                  <label class="form-label" style="font-size: 11px;">Action lors de la détection d'un doublon</label>
+                  <select v-model="form.clusterMode" class="form-select">
+                    <option value="merge">Fusionner (Ajoute la source liée sous le message initial)</option>
+                    <option value="skip">Ignorer (Ne pas reposter l'actualité)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- 🎥 Résumeur Vidéo YouTube Automatique -->
+              <div class="form-group" style="background: rgba(220, 38, 38, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(220, 38, 38, 0.2); margin-top: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <div>
+                    <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🎥 Résumeur Vidéo YouTube Automatique</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">Extrait les points clés des vidéos sous forme de synthèse à puces</div>
+                  </div>
+                  <input v-model="form.enableVideoSummary" type="checkbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: #dc2626;" />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1147,6 +1233,72 @@
             </div>
           </div>
 
+          <!-- 🌐 Traduction Intelligente du Titre en Français -->
+          <div class="form-group" style="background: rgba(59, 130, 246, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.2); margin-top: 10px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🌐 Traduction des Titres en Français</div>
+                <div style="font-size: 12px; color: var(--text-muted);">Traduit automatiquement les titres en langue étrangère (avec badge 🇫🇷)</div>
+              </div>
+              <input v-model="editForm.translateTitleToFr" type="checkbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: #3b82f6;" />
+            </div>
+          </div>
+
+          <!-- 🔍 Dé-clickbaiteur & Titres Factuels -->
+          <div class="form-group" style="background: rgba(14, 165, 233, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(14, 165, 233, 0.2); margin-top: 10px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🔍 Anti-Clickbait & Titres Factuels</div>
+                <div style="font-size: 12px; color: var(--text-muted);">Neutralise les titres racoleurs en reformulations claires et neutres</div>
+              </div>
+              <input v-model="editForm.antiClickbait" type="checkbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0ea5e9;" />
+            </div>
+          </div>
+
+          <!-- 🛡️ Salle d'Attente & Validation Manuelle -->
+          <div class="form-group" style="background: rgba(239, 68, 68, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2); margin-top: 10px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+              <div>
+                <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🛡️ Salle d'Attente & Validation Manuelle</div>
+                <div style="font-size: 12px; color: var(--text-muted);">Achemine les actualités vers un salon de modération avant publication</div>
+              </div>
+              <input v-model="editForm.requireApproval" type="checkbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: #ef4444;" />
+            </div>
+            <div v-if="editForm.requireApproval" style="padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.1);">
+              <label class="form-label" style="font-size: 11px;">Salon de modération Discord</label>
+              <DiscordChannelSelect v-model="editForm.moderationChannelId" placeholder="Sélectionner le salon de modération" />
+            </div>
+          </div>
+
+          <!-- 🤖 Dé-duplication Sémantique Multi-Flux -->
+          <div class="form-group" style="background: rgba(168, 85, 247, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(168, 85, 247, 0.2); margin-top: 10px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+              <div>
+                <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🤖 Dé-duplication Multi-Flux (Story Clustering)</div>
+                <div style="font-size: 12px; color: var(--text-muted);">Regroupe les doublons d'actualités traitant du même événement</div>
+              </div>
+              <input v-model="editForm.enableStoryClustering" type="checkbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: #a855f7;" />
+            </div>
+            <div v-if="editForm.enableStoryClustering" style="padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.1);">
+              <label class="form-label" style="font-size: 11px;">Action lors de la détection d'un doublon</label>
+              <select v-model="editForm.clusterMode" class="form-select">
+                <option value="merge">Fusionner (Ajoute la source liée sous le message initial)</option>
+                <option value="skip">Ignorer (Ne pas reposter l'actualité)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 🎥 Résumeur Vidéo YouTube Automatique -->
+          <div class="form-group" style="background: rgba(220, 38, 38, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(220, 38, 38, 0.2); margin-top: 10px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🎥 Résumeur Vidéo YouTube Automatique</div>
+                <div style="font-size: 12px; color: var(--text-muted);">Extrait les points clés des vidéos sous forme de synthèse à puces</div>
+              </div>
+              <input v-model="editForm.enableVideoSummary" type="checkbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: #dc2626;" />
+            </div>
+          </div>
+
           <div class="modal-footer">
             <button type="button" class="module-btn" @click="showEditModal = false">
               Annuler
@@ -1383,7 +1535,14 @@ const form = ref<any>({
   minDiscountPercent: 0,
   autoSyncEvents: false,
   goodVibesOnly: false,
-  enableSecurityScan: true
+  enableSecurityScan: true,
+  translateTitleToFr: false,
+  antiClickbait: false,
+  requireApproval: false,
+  moderationChannelId: '',
+  enableStoryClustering: false,
+  clusterMode: 'merge' as 'merge' | 'skip',
+  enableVideoSummary: false
 });
 
 const editForm = ref({
@@ -1425,7 +1584,14 @@ const editForm = ref({
   minDiscountPercent: 0,
   autoSyncEvents: false,
   goodVibesOnly: false,
-  enableSecurityScan: true
+  enableSecurityScan: true,
+  translateTitleToFr: false,
+  antiClickbait: false,
+  requireApproval: false,
+  moderationChannelId: '',
+  enableStoryClustering: false,
+  clusterMode: 'merge' as 'merge' | 'skip',
+  enableVideoSummary: false
 });
 
 function isLiveProvider(provider?: string): boolean {
@@ -1541,7 +1707,14 @@ function openCreateModal() {
     minDiscountPercent: 0,
     autoSyncEvents: false,
     goodVibesOnly: false,
-    enableSecurityScan: true
+    enableSecurityScan: true,
+    translateTitleToFr: false,
+    antiClickbait: false,
+    requireApproval: false,
+    moderationChannelId: '',
+    enableStoryClustering: false,
+    clusterMode: 'merge' as 'merge' | 'skip',
+    enableVideoSummary: false
   };
   tagsInput.value = '';
   includeKeywordsInput.value = '';
@@ -1592,7 +1765,14 @@ function openEditModal(feed: AutofeedItem) {
     minDiscountPercent: feed.minDiscountPercent || 0,
     autoSyncEvents: Boolean(feed.autoSyncEvents),
     goodVibesOnly: Boolean(feed.goodVibesOnly),
-    enableSecurityScan: feed.enableSecurityScan !== false
+    enableSecurityScan: feed.enableSecurityScan !== false,
+    translateTitleToFr: Boolean(feed.translateTitleToFr),
+    antiClickbait: Boolean(feed.antiClickbait),
+    requireApproval: Boolean(feed.requireApproval),
+    moderationChannelId: feed.moderationChannelId || '',
+    enableStoryClustering: Boolean(feed.enableStoryClustering),
+    clusterMode: feed.clusterMode || 'merge',
+    enableVideoSummary: Boolean(feed.enableVideoSummary)
   };
   editTagsInput.value = (feed.tags || []).join(', ');
   editIncludeInput.value = (feed.filterKeywords || []).join(', ');
@@ -1699,6 +1879,13 @@ async function handleCreateFeed() {
       autoSyncEvents: Boolean(form.value.autoSyncEvents),
       goodVibesOnly: Boolean(form.value.goodVibesOnly),
       enableSecurityScan: Boolean(form.value.enableSecurityScan),
+      translateTitleToFr: Boolean(form.value.translateTitleToFr),
+      antiClickbait: Boolean(form.value.antiClickbait),
+      requireApproval: Boolean(form.value.requireApproval),
+      moderationChannelId: form.value.moderationChannelId || undefined,
+      enableStoryClustering: Boolean(form.value.enableStoryClustering),
+      clusterMode: form.value.clusterMode || 'merge',
+      enableVideoSummary: Boolean(form.value.enableVideoSummary),
       channelTagRouting: tagRouting,
       quietHours: {
         enabled: form.value.quietHoursEnabled,
@@ -1785,6 +1972,13 @@ async function handleUpdateFeed() {
       autoSyncEvents: Boolean(editForm.value.autoSyncEvents),
       goodVibesOnly: Boolean(editForm.value.goodVibesOnly),
       enableSecurityScan: Boolean(editForm.value.enableSecurityScan),
+      translateTitleToFr: Boolean(editForm.value.translateTitleToFr),
+      antiClickbait: Boolean(editForm.value.antiClickbait),
+      requireApproval: Boolean(editForm.value.requireApproval),
+      moderationChannelId: editForm.value.moderationChannelId || null,
+      enableStoryClustering: Boolean(editForm.value.enableStoryClustering),
+      clusterMode: editForm.value.clusterMode || 'merge',
+      enableVideoSummary: Boolean(editForm.value.enableVideoSummary),
       tags: parsedTags,
       filterKeywords: parsedInclude,
       excludeKeywords: parsedExclude

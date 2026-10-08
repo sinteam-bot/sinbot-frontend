@@ -254,6 +254,14 @@
             <span>Affiche les articles les plus plébiscités par la communauté (upvotes)</span>
           </div>
           <div class="command-row">
+            <code>/feed my-digest [heure] [actif]</code>
+            <span>Configure son Journal Privé matinal reçu en message privé (DM)</span>
+          </div>
+          <div class="command-row">
+            <code>/feed ask &lt;url&gt; &lt;question&gt;</code>
+            <span>Interroge l'assistant IA dédié à propos d'un article ou d'une actualité</span>
+          </div>
+          <div class="command-row">
             <code>/feed list</code>
             <span>Affiche la liste de tous les flux actifs sur le serveur</span>
           </div>
