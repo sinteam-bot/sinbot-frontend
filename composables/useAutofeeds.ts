@@ -38,6 +38,10 @@ export interface AutofeedItem {
   color?: string;
   embedColor?: string;
   pingRoleId?: string | null;
+  subscriberRoleId?: string | null;
+  notificationDelivery?: 'channel' | 'dm' | 'both' | 'role';
+  createThread?: boolean;
+  threadAutoArchiveDuration?: number;
   lastItemId?: string | null;
   lastItemPublishedAt?: number;
   intervalMinutes: number;
@@ -71,6 +75,10 @@ export interface CreateAutofeedPayload {
   color?: string;
   customMessage?: string;
   pingRoleId?: string;
+  subscriberRoleId?: string;
+  notificationDelivery?: 'channel' | 'dm' | 'both' | 'role';
+  createThread?: boolean;
+  threadAutoArchiveDuration?: number;
   guildId?: string;
   filters?: AutofeedFilters;
 }
@@ -94,7 +102,7 @@ export interface AutofeedSubscription {
   userId: string;
   targetType: 'tag' | 'category' | 'feed' | 'keyword' | 'account' | 'author';
   targetValue: string;
-  notifyMode: 'mention' | 'dm';
+  notifyMode: 'mention' | 'dm' | 'both' | 'role';
   filters?: {
     includeKeywords?: string[];
     excludeKeywords?: string[];
@@ -142,6 +150,10 @@ function normalizeFeed(item: any): AutofeedItem {
     color,
     embedColor: color,
     pingRoleId: item.pingRoleId || item.ping_role_id,
+    subscriberRoleId: item.subscriberRoleId || item.subscriber_role_id || null,
+    notificationDelivery: item.notificationDelivery || item.notification_delivery || 'channel',
+    createThread: Boolean(item.createThread ?? item.create_thread ?? false),
+    threadAutoArchiveDuration: item.threadAutoArchiveDuration || item.thread_auto_archive_duration || 1440,
     lastItemId: item.lastItemId || item.last_item_id,
     lastItemPublishedAt: item.lastItemPublishedAt || item.last_item_published_at || 0,
     intervalMinutes: interval,

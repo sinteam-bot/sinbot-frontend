@@ -44,6 +44,13 @@
           >
             <span>🤖</span> OpenRouter & Résilience Polly
           </NuxtLink>
+          <NuxtLink
+            to="/config/autofeeds"
+            class="module-tab-btn"
+            :class="{ active: isTabActive('/config/autofeeds') }"
+          >
+            <span>📡</span> Flux & Streams (APIs)
+          </NuxtLink>
         </div>
       </div>
 

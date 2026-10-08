@@ -100,11 +100,11 @@
                 <span v-if="isLiveProvider(feed.provider)" class="live-indicator-pill">🔴 LIVE</span>
                 <!-- Badge de santé du flux -->
                 <span
-                  v-if="feed.lastStatus === 'error'"
+                  v-if="feed.lastStatus === 'error' || (feed.failCount && feed.failCount > 0)"
                   class="health-badge error"
-                  :title="feed.lastError || 'Erreur lors de la dernière vérification'"
+                  :title="feed.lastError ? ((feed.failCount ? feed.failCount + '/10 échecs : ' : '') + feed.lastError) : 'Erreur de vérification'"
                 >
-                  ⚠️ Erreur
+                  ⚠️ {{ feed.failCount && feed.failCount > 0 ? `Erreur (${feed.failCount}/10)` : 'Erreur' }}
                 </span>
                 <span
                   v-else-if="feed.lastCheckedAt"
@@ -127,6 +127,14 @@
           <div class="meta-item">
             <span class="meta-icon">⏱️</span>
             <span class="meta-text">{{ feed.checkIntervalMinutes }} min</span>
+          </div>
+          <div v-if="feed.createThread" class="meta-item" title="Crée un fil de discussion Discord pour ce stream">
+            <span class="meta-icon">🧵</span>
+            <span class="meta-text">Thread</span>
+          </div>
+          <div v-if="feed.subscriberRoleId" class="meta-item" title="Rôle Discord attribué aux abonnés">
+            <span class="meta-icon">🏷️</span>
+            <span class="meta-text">Rôle auto</span>
           </div>
           <div v-if="feed.category" class="meta-item">
             <span class="tag-badge category">{{ feed.category }}</span>
@@ -303,6 +311,39 @@
                   class="form-input"
                   placeholder="ID du rôle (ex: 123456789012345678)"
                 />
+              </div>
+
+              <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(255, 255, 255, 0.03); border-radius: 6px;">
+                <div>
+                  <label class="form-label" style="margin-bottom: 2px;">🧵 Créer un fil de discussion (Thread)</label>
+                  <span class="form-hint" style="margin: 0;">Ouvre automatiquement un chat temporaire sous l'annonce</span>
+                </div>
+                <input
+                  v-model="form.createThread"
+                  type="checkbox"
+                  style="width: 18px; height: 18px; cursor: pointer; accent-color: #5865f2;"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">🏷️ Rôle Discord attribué aux abonnés de ce flux</label>
+                <input
+                  v-model="form.subscriberRoleId"
+                  type="text"
+                  class="form-input"
+                  placeholder="ID du rôle (optionnel, attribué automatiquement)"
+                />
+                <span class="form-hint">Les membres qui cliquent sur le bouton d'abonnement recevront ce rôle.</span>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Mode de notification</label>
+                <select v-model="form.notificationDelivery" class="form-select">
+                  <option value="channel">📢 Salon public (mentions)</option>
+                  <option value="dm">📩 Message Privé (DM)</option>
+                  <option value="both">🔔 Salon + Message Privé (DM)</option>
+                  <option value="role">🏷️ Rôle dédié uniquement</option>
+                </select>
               </div>
 
               <div class="form-group">
@@ -498,6 +539,39 @@
                   placeholder="ID du rôle (ex: 123456789012345678)"
                 />
               </div>
+
+              <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: rgba(88, 101, 242, 0.08); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(88, 101, 242, 0.2);">
+                <div>
+                  <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🧵 Créer un fil de discussion (Thread)</div>
+                  <div style="font-size: 12px; color: var(--text-muted);">Ouvre un fil Discord sous l'annonce pour les réactions en direct.</div>
+                </div>
+                <input
+                  v-model="editForm.createThread"
+                  type="checkbox"
+                  style="width: 18px; height: 18px; cursor: pointer; accent-color: #5865f2;"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">🏷️ Rôle Discord attribué aux abonnés de ce flux</label>
+                <input
+                  v-model="editForm.subscriberRoleId"
+                  type="text"
+                  class="form-input"
+                  placeholder="ID du rôle (optionnel, attribué automatiquement)"
+                />
+                <span class="form-hint">Les membres qui cliquent sur le bouton d'abonnement recevront ce rôle.</span>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Mode de notification</label>
+                <select v-model="editForm.notificationDelivery" class="form-select">
+                  <option value="channel">📢 Salon public (mentions)</option>
+                  <option value="dm">📩 Message Privé (DM)</option>
+                  <option value="both">🔔 Salon + Message Privé (DM)</option>
+                  <option value="role">🏷️ Rôle dédié uniquement</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -568,7 +642,10 @@ const form = ref<CreateAutofeedPayload>({
   regexFilter: '',
   embedColor: '#5865F2',
   customMessage: '',
-  pingRoleId: ''
+  pingRoleId: '',
+  createThread: false,
+  subscriberRoleId: '',
+  notificationDelivery: 'channel'
 });
 
 const editForm = ref({
@@ -578,7 +655,10 @@ const editForm = ref({
   checkIntervalMinutes: 15,
   embedColor: '#5865F2',
   customMessage: '',
-  pingRoleId: ''
+  pingRoleId: '',
+  createThread: false,
+  subscriberRoleId: '',
+  notificationDelivery: 'channel' as 'channel' | 'dm' | 'both' | 'role'
 });
 
 function isLiveProvider(provider?: string): boolean {
@@ -662,7 +742,10 @@ function openCreateModal() {
     regexFilter: '',
     embedColor: '#5865F2',
     customMessage: '',
-    pingRoleId: ''
+    pingRoleId: '',
+    createThread: false,
+    subscriberRoleId: '',
+    notificationDelivery: 'channel'
   };
   tagsInput.value = '';
   includeKeywordsInput.value = '';
@@ -681,7 +764,10 @@ function openEditModal(feed: AutofeedItem) {
     checkIntervalMinutes: feed.checkIntervalMinutes || 15,
     embedColor: feed.color || '#5865F2',
     customMessage: feed.customMessage || '',
-    pingRoleId: feed.pingRoleId || ''
+    pingRoleId: feed.pingRoleId || '',
+    createThread: Boolean(feed.createThread),
+    subscriberRoleId: feed.subscriberRoleId || '',
+    notificationDelivery: (feed.notificationDelivery as any) || 'channel'
   };
   editTagsInput.value = (feed.tags || []).join(', ');
   editIncludeInput.value = (feed.filterKeywords || []).join(', ');
@@ -785,6 +871,9 @@ async function handleUpdateFeed() {
       color: editForm.value.embedColor,
       customMessage: editForm.value.customMessage || undefined,
       pingRoleId: editForm.value.pingRoleId || undefined,
+      createThread: editForm.value.createThread,
+      subscriberRoleId: editForm.value.subscriberRoleId || undefined,
+      notificationDelivery: editForm.value.notificationDelivery,
       tags: parsedTags,
       filterKeywords: parsedInclude,
       excludeKeywords: parsedExclude
