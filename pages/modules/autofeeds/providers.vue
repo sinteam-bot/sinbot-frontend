@@ -52,13 +52,13 @@
         </div>
       </div>
 
-      <!-- 2. YouTube -->
+      <!-- 2. YouTube Vidéos -->
       <div class="provider-card ready">
         <div class="provider-card-header">
           <span class="provider-card-icon">📺</span>
           <div style="flex: 1;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <h4 class="provider-card-title">YouTube</h4>
+              <h4 class="provider-card-title">YouTube Vidéos</h4>
               <span class="status-pill ready">🟢 Opérationnel</span>
             </div>
             <span class="provider-sub">Chaînes, Poignées (@handle) &amp; Playlists</span>
@@ -74,6 +74,31 @@
         </div>
         <div class="url-example">
           <code>https://www.youtube.com/@PlayStation</code>
+        </div>
+      </div>
+
+      <!-- 3. YouTube Live -->
+      <div class="provider-card ready">
+        <div class="provider-card-header">
+          <span class="provider-card-icon">🔴</span>
+          <div style="flex: 1;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <h4 class="provider-card-title">YouTube Live</h4>
+              <span class="status-pill ready">🟢 Opérationnel</span>
+            </div>
+            <span class="provider-sub">Diffusions en direct (/live) &amp; WebSub</span>
+          </div>
+        </div>
+        <p class="provider-card-desc">
+          Détection instantanée des diffusions en direct sur YouTube, avec suivi du stream, passage automatique en OFFLINE et notification des abonnés.
+        </p>
+        <div class="provider-features">
+          <span class="feat-tag">⚡ Détection /live en direct</span>
+          <span class="feat-tag">⚫ Clôture in-place sans ghost-ping</span>
+          <span class="feat-tag">🔔 Mentions personnalisées</span>
+        </div>
+        <div class="url-example">
+          <code>https://www.youtube.com/@Zerator/live</code>
         </div>
       </div>
 

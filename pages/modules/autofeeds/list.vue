@@ -33,6 +33,13 @@
         Tous les flux ({{ feeds.length }})
       </button>
       <button
+        class="filter-pill live-pill"
+        :class="{ active: selectedCategory === 'live' }"
+        @click="selectedCategory = 'live'"
+      >
+        🔴 Directs &amp; Lives ({{ liveFeedsCount }})
+      </button>
+      <button
         v-for="cat in availableCategories"
         :key="cat"
         class="filter-pill"
@@ -69,8 +76,9 @@
         :class="{ 'feed-disabled': !feed.isActive }"
       >
         <div class="feed-card-header">
-          <div class="feed-icon-wrap">
-            <span v-if="feed.provider === 'youtube'">📺</span>
+          <div class="feed-icon-wrap" :class="{ 'live-wrap': isLiveProvider(feed.provider) }">
+            <span v-if="feed.provider === 'youtube_live'">🔴</span>
+            <span v-else-if="feed.provider === 'youtube'">📺</span>
             <span v-else-if="feed.provider === 'reddit'">🤖</span>
             <span v-else-if="feed.provider === 'google_news'">📰</span>
             <span v-else-if="feed.provider === 'twitch'">🟣</span>
@@ -89,6 +97,7 @@
               <h4 class="feed-title" :title="feed.name">{{ feed.name }}</h4>
               <div style="display: flex; align-items: center; gap: 4px;">
                 <span class="provider-pill">{{ feed.provider || 'rss' }}</span>
+                <span v-if="isLiveProvider(feed.provider)" class="live-indicator-pill">🔴 LIVE</span>
                 <!-- Badge de santé du flux -->
                 <span
                   v-if="feed.lastStatus === 'error'"
@@ -266,6 +275,60 @@
             <span class="form-hint">Les membres pourront s'abonner individuellement à ces tags pour être alertés !</span>
           </div>
 
+          <!-- Options de Stream & Directs (Grill-me décision 6) -->
+          <div class="stream-section">
+            <div class="stream-toggle" @click="showStreamOptions = !showStreamOptions">
+              <span>{{ showStreamOptions ? '▼' : '►' }} 🎭 Options de Stream &amp; Directs (Twitch, Kick, YouTube Live)</span>
+            </div>
+
+            <div v-if="showStreamOptions" class="stream-body">
+              <div class="form-group">
+                <label class="form-label">Message d'annonce en direct personnalisé</label>
+                <input
+                  v-model="form.customMessage"
+                  type="text"
+                  class="form-input"
+                  placeholder="Ex: 🔴 {streamer} est en live sur {game} ! {url} {mentions}"
+                />
+                <span class="form-hint">
+                  Placeholders : <code>{streamer}</code>, <code>{title}</code>, <code>{game}</code>, <code>{viewers}</code>, <code>{url}</code>, <code>{mentions}</code>
+                </span>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Rôle Discord à mentionner lors du direct</label>
+                <input
+                  v-model="form.pingRoleId"
+                  type="text"
+                  class="form-input"
+                  placeholder="ID du rôle (ex: 123456789012345678)"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Intervalle rapide pour flux en direct</label>
+                <div style="display: flex; gap: 8px;">
+                  <button
+                    type="button"
+                    class="interval-quick-btn"
+                    :class="{ active: form.checkIntervalMinutes === 2 }"
+                    @click="form.checkIntervalMinutes = 2"
+                  >
+                    ⚡ 2 min (Recommandé)
+                  </button>
+                  <button
+                    type="button"
+                    class="interval-quick-btn"
+                    :class="{ active: form.checkIntervalMinutes === 5 }"
+                    @click="form.checkIntervalMinutes = 5"
+                  >
+                    5 min
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Filtres avancés -->
           <div class="advanced-section">
             <div class="advanced-toggle" @click="showAdvanced = !showAdvanced">
@@ -409,6 +472,35 @@
             />
           </div>
 
+          <!-- Options de Stream en édition -->
+          <div class="stream-section">
+            <div class="stream-toggle" @click="showEditStreamOptions = !showEditStreamOptions">
+              <span>{{ showEditStreamOptions ? '▼' : '►' }} 🎭 Options de Stream (Annonce &amp; Rôle)</span>
+            </div>
+
+            <div v-if="showEditStreamOptions" class="stream-body">
+              <div class="form-group">
+                <label class="form-label">Message en direct personnalisé</label>
+                <input
+                  v-model="editForm.customMessage"
+                  type="text"
+                  class="form-input"
+                  placeholder="Ex: 🔴 {streamer} est en live sur {game} ! {url} {mentions}"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Rôle Discord à mentionner</label>
+                <input
+                  v-model="editForm.pingRoleId"
+                  type="text"
+                  class="form-input"
+                  placeholder="ID du rôle (ex: 123456789012345678)"
+                />
+              </div>
+            </div>
+          </div>
+
           <div class="form-group">
             <label class="form-label">Couleur de l'Embed (Hex)</label>
             <input
@@ -450,6 +542,8 @@ const selectedCategory = ref('');
 const showModal = ref(false);
 const showEditModal = ref(false);
 const showAdvanced = ref(false);
+const showStreamOptions = ref(false);
+const showEditStreamOptions = ref(false);
 const submitting = ref(false);
 
 const tagsInput = ref('');
@@ -472,7 +566,9 @@ const form = ref<CreateAutofeedPayload>({
   filterKeywords: [],
   excludeKeywords: [],
   regexFilter: '',
-  embedColor: '#5865F2'
+  embedColor: '#5865F2',
+  customMessage: '',
+  pingRoleId: ''
 });
 
 const editForm = ref({
@@ -480,7 +576,17 @@ const editForm = ref({
   channelId: '',
   category: 'gaming',
   checkIntervalMinutes: 15,
-  embedColor: '#5865F2'
+  embedColor: '#5865F2',
+  customMessage: '',
+  pingRoleId: ''
+});
+
+function isLiveProvider(provider?: string): boolean {
+  return ['twitch', 'kick', 'youtube_live'].includes(provider || '');
+}
+
+const liveFeedsCount = computed(() => {
+  return feeds.value.filter(f => isLiveProvider(f.provider) || f.category === 'live').length;
 });
 
 const availableCategories = computed(() => {
@@ -493,6 +599,9 @@ const availableCategories = computed(() => {
 
 const filteredFeeds = computed(() => {
   if (!selectedCategory.value) return feeds.value;
+  if (selectedCategory.value === 'live') {
+    return feeds.value.filter(f => isLiveProvider(f.provider) || f.category === 'live');
+  }
   return feeds.value.filter(f => f.category === selectedCategory.value);
 });
 
@@ -523,10 +632,20 @@ function autoGuessName() {
   else if (url.includes('reddit.com/r/')) {
     const match = form.value.url.match(/r\/([a-zA-Z0-9_]+)/);
     if (match) form.value.name = `Reddit r/${match[1]}`;
+  } else if (url.includes('/live') || (url.includes('youtube.com/@') && url.endsWith('/live'))) {
+    form.value.name = 'YouTube Live';
+    form.value.checkIntervalMinutes = 2;
+    showStreamOptions.value = true;
   } else if (url.includes('youtube.com')) form.value.name = 'Vidéos YouTube';
-  else if (url.includes('twitch.tv')) form.value.name = 'Twitch Stream';
-  else if (url.includes('kick.com')) form.value.name = 'Kick Live';
-  else if (url.includes('news.google.com')) form.value.name = 'Google News';
+  else if (url.includes('twitch.tv')) {
+    form.value.name = 'Twitch Stream';
+    form.value.checkIntervalMinutes = 2;
+    showStreamOptions.value = true;
+  } else if (url.includes('kick.com')) {
+    form.value.name = 'Kick Live';
+    form.value.checkIntervalMinutes = 2;
+    showStreamOptions.value = true;
+  } else if (url.includes('news.google.com')) form.value.name = 'Google News';
 }
 
 function openCreateModal() {
@@ -541,12 +660,15 @@ function openCreateModal() {
     filterKeywords: [],
     excludeKeywords: [],
     regexFilter: '',
-    embedColor: '#5865F2'
+    embedColor: '#5865F2',
+    customMessage: '',
+    pingRoleId: ''
   };
   tagsInput.value = '';
   includeKeywordsInput.value = '';
   excludeKeywordsInput.value = '';
   showAdvanced.value = false;
+  showStreamOptions.value = false;
   showModal.value = true;
 }
 
@@ -557,11 +679,14 @@ function openEditModal(feed: AutofeedItem) {
     channelId: feed.channelId,
     category: feed.category || 'gaming',
     checkIntervalMinutes: feed.checkIntervalMinutes || 15,
-    embedColor: feed.color || '#5865F2'
+    embedColor: feed.color || '#5865F2',
+    customMessage: feed.customMessage || '',
+    pingRoleId: feed.pingRoleId || ''
   };
   editTagsInput.value = (feed.tags || []).join(', ');
   editIncludeInput.value = (feed.filterKeywords || []).join(', ');
   editExcludeInput.value = (feed.excludeKeywords || []).join(', ');
+  showEditStreamOptions.value = isLiveProvider(feed.provider);
   showEditModal.value = true;
 }
 
@@ -658,6 +783,8 @@ async function handleUpdateFeed() {
       category: editForm.value.category,
       checkIntervalMinutes: editForm.value.checkIntervalMinutes,
       color: editForm.value.embedColor,
+      customMessage: editForm.value.customMessage || undefined,
+      pingRoleId: editForm.value.pingRoleId || undefined,
       tags: parsedTags,
       filterKeywords: parsedInclude,
       excludeKeywords: parsedExclude
@@ -1030,6 +1157,62 @@ input:checked + .slider:before {
   flex-direction: column;
   gap: 12px;
   border-top: 1px solid var(--border-subtle);
+}
+.live-pill {
+  border-color: rgba(237, 66, 69, 0.4);
+}
+.live-pill.active {
+  background: rgba(237, 66, 69, 0.2);
+  color: #ed4245;
+  border-color: #ed4245;
+}
+.live-wrap {
+  box-shadow: 0 0 10px rgba(237, 66, 69, 0.35);
+  border: 1px solid rgba(237, 66, 69, 0.5);
+}
+.live-indicator-pill {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(237, 66, 69, 0.18);
+  color: #ed4245;
+  border: 1px solid rgba(237, 66, 69, 0.4);
+  text-transform: uppercase;
+}
+.stream-section {
+  border: 1px solid rgba(237, 66, 69, 0.3);
+  border-radius: 6px;
+  background: var(--background-secondary);
+}
+.stream-toggle {
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ed4245;
+  cursor: pointer;
+  user-select: none;
+}
+.stream-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-top: 1px solid var(--border-subtle);
+}
+.interval-quick-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: var(--background-secondary-alt);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-normal);
+  font-size: 12px;
+  cursor: pointer;
+}
+.interval-quick-btn.active {
+  background: rgba(88, 101, 242, 0.2);
+  border-color: var(--brand-experiment, #5865f2);
+  color: #fff;
 }
 .modal-footer {
   display: flex;
