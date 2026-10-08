@@ -47,6 +47,19 @@ export interface AutofeedItem {
   ignoreShorts?: boolean;
   aiSummary?: boolean;
   aiTranslate?: boolean;
+  digestMode?: 'realtime' | 'daily' | 'weekly';
+  digestSchedule?: string;
+  digestChannelId?: string | null;
+  enableGamification?: boolean;
+  gamificationXpReward?: number;
+  channelTagRouting?: Record<string, string>;
+  quietHours?: {
+    enabled?: boolean;
+    start?: string;
+    end?: string;
+    suppressMentions?: boolean;
+  };
+  maxPostsPerHour?: number;
   lastItemId?: string | null;
   lastItemPublishedAt?: number;
   intervalMinutes: number;
@@ -89,8 +102,56 @@ export interface CreateAutofeedPayload {
   ignoreShorts?: boolean;
   aiSummary?: boolean;
   aiTranslate?: boolean;
+  digestMode?: 'realtime' | 'daily' | 'weekly';
+  digestSchedule?: string;
+  digestChannelId?: string;
+  enableGamification?: boolean;
+  gamificationXpReward?: number;
+  channelTagRouting?: Record<string, string>;
+  quietHours?: {
+    enabled?: boolean;
+    start?: string;
+    end?: string;
+    suppressMentions?: boolean;
+  };
+  maxPostsPerHour?: number;
   guildId?: string;
   filters?: AutofeedFilters;
+}
+
+export interface AutofeedStats {
+  totalFeeds: number;
+  activeFeeds: number;
+  totalSubscriptions: number;
+  totalPosts: number;
+  totalClicks: number;
+  totalClaims: number;
+  totalXpAwarded: number;
+  topTags: Array<{ tag: string; count: number }>;
+  topProviders: Array<{ provider: string; count: number }>;
+}
+
+export interface AutofeedSearchItem {
+  id: string;
+  feedId: string;
+  guildId: string;
+  feedName: string;
+  itemGuid: string;
+  url: string;
+  title: string;
+  author?: string;
+  content?: string;
+  tags: string[];
+  isDigest: boolean;
+  clicksCount: number;
+  postedAt: number;
+}
+
+export interface AutofeedClaimResult {
+  success: boolean;
+  alreadyClaimed: boolean;
+  claimsCount: number;
+  xpAwarded?: number;
 }
 
 export interface AutofeedPreset {
@@ -169,6 +230,14 @@ function normalizeFeed(item: any): AutofeedItem {
     ignoreShorts: Boolean(item.ignoreShorts ?? item.ignore_shorts ?? false),
     aiSummary: Boolean(item.aiSummary ?? item.ai_summary ?? false),
     aiTranslate: Boolean(item.aiTranslate ?? item.ai_translate ?? false),
+    digestMode: item.digestMode || item.digest_mode || 'realtime',
+    digestSchedule: item.digestSchedule || item.digest_schedule || '08:00',
+    digestChannelId: item.digestChannelId || item.digest_channel_id || null,
+    enableGamification: Boolean(item.enableGamification ?? item.enable_gamification ?? false),
+    gamificationXpReward: Number(item.gamificationXpReward || item.gamification_xp_reward || 25),
+    channelTagRouting: typeof item.channelTagRouting === 'string' ? JSON.parse(item.channelTagRouting || '{}') : (item.channelTagRouting || item.channel_tag_routing || {}),
+    quietHours: typeof item.quietHours === 'string' ? JSON.parse(item.quietHours || '{}') : (item.quietHours || item.quiet_hours || {}),
+    maxPostsPerHour: Number(item.maxPostsPerHour || item.max_posts_per_hour || 0),
     lastItemId: item.lastItemId || item.last_item_id,
     lastItemPublishedAt: item.lastItemPublishedAt || item.last_item_published_at || 0,
     intervalMinutes: interval,
@@ -337,6 +406,46 @@ export const useAutofeeds = () => {
     return xml;
   }
 
+  async function getStats(guildId?: string): Promise<AutofeedStats> {
+    const qs = guildId ? `?guild_id=${encodeURIComponent(guildId)}` : '';
+    const res = await api.apiFetch<{ ok?: boolean; success?: boolean; data: AutofeedStats; error?: string }>(`/api/autofeeds/stats${qs}`);
+    if ((res.ok === false || res.success === false) && res.error) throw new Error(res.error);
+    return res.data || {
+      totalFeeds: 0,
+      activeFeeds: 0,
+      totalSubscriptions: 0,
+      totalPosts: 0,
+      totalClicks: 0,
+      totalClaims: 0,
+      totalXpAwarded: 0,
+      topTags: [],
+      topProviders: []
+    };
+  }
+
+  async function searchItems(query: string, guildId?: string, limit: number = 10): Promise<AutofeedSearchItem[]> {
+    const params = new URLSearchParams({ q: query, limit: String(limit) });
+    if (guildId) params.set('guild_id', guildId);
+    const res = await api.apiFetch<{ ok?: boolean; success?: boolean; data: AutofeedSearchItem[]; error?: string }>(`/api/autofeeds/search?${params.toString()}`);
+    if ((res.ok === false || res.success === false) && res.error) throw new Error(res.error);
+    return res.data || [];
+  }
+
+  async function claimItem(payload: {
+    feedId: string;
+    itemId: string;
+    userId: string;
+    guildId?: string;
+    xpAwarded?: number;
+  }): Promise<AutofeedClaimResult> {
+    const res = await api.apiFetch<{ ok?: boolean; success?: boolean; data: AutofeedClaimResult; error?: string }>('/api/autofeeds/claims', {
+      method: 'POST',
+      body: payload as any
+    });
+    if ((res.ok === false || res.success === false) && res.error) throw new Error(res.error);
+    return res.data;
+  }
+
   return {
     listFeeds,
     fetchFeeds: listFeeds,
@@ -355,6 +464,10 @@ export const useAutofeeds = () => {
     createSubscription,
     deleteSubscription,
     importOpml,
-    exportOpml
+    exportOpml,
+    getStats,
+    fetchStats: getStats,
+    searchItems,
+    claimItem
   };
 };

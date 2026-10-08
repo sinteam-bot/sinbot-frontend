@@ -95,7 +95,10 @@
             <span v-else-if="feed.provider === 'tiktok'">🎵</span>
             <span v-else-if="feed.provider === 'instagram'">📸</span>
             <span v-else-if="feed.provider === 'facebook'">👥</span>
-            <span v-else-if="feed.provider === 'linkedin'">💼</span>
+            <span v-else-if="feed.provider === 'github'">🐙</span>
+            <span v-else-if="feed.provider === 'gitlab'">🦊</span>
+            <span v-else-if="feed.provider === 'statuspage'">📊</span>
+            <span v-else-if="feed.provider === 'bluesky'">🦋</span>
             <span v-else-if="feed.category === 'gaming'">🎮</span>
             <span v-else>📡</span>
           </div>
@@ -476,6 +479,95 @@
                   placeholder="#5865F2"
                 />
               </div>
+
+              <!-- 📰 Mode Gazette & Digest -->
+              <div class="form-group" style="background: rgba(88, 101, 242, 0.05); padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle); margin-top: 10px;">
+                <label class="form-label" style="display: flex; align-items: center; gap: 6px;">
+                  <span>📰</span>
+                  <span>Mode de Diffusion & Digest</span>
+                </label>
+                <select v-model="form.digestMode" class="form-select" style="margin-bottom: 8px;">
+                  <option value="realtime">⚡ Temps réel (instantané)</option>
+                  <option value="daily">🌅 Gazette quotidienne (bulletin matinal)</option>
+                  <option value="weekly">📅 Gazette hebdomadaire</option>
+                </select>
+                <div v-if="form.digestMode !== 'realtime'" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                  <div style="flex: 1; min-width: 120px;">
+                    <label class="form-label" style="font-size: 11px;">Heure d'envoi</label>
+                    <input v-model="form.digestSchedule" type="time" class="form-input" />
+                  </div>
+                  <div style="flex: 2; min-width: 180px;">
+                    <label class="form-label" style="font-size: 11px;">Salon Digest (optionnel)</label>
+                    <DiscordChannelSelect v-model="form.digestChannelId" placeholder="Même salon par défaut" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- 🎁 Gamification Drop Hunter -->
+              <div class="form-group" style="background: rgba(244, 180, 0, 0.06); padding: 12px; border-radius: 8px; border: 1px solid rgba(244, 180, 0, 0.2); margin-top: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                  <div>
+                    <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🎁 Bouton Drop Hunter (Offres Réclamées)</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">Ajoute un bouton « J'ai récupéré l'offre ! » avec compteur et attribution d'XP</div>
+                  </div>
+                  <input
+                    v-model="form.enableGamification"
+                    type="checkbox"
+                    style="width: 18px; height: 18px; cursor: pointer; accent-color: #f4b400;"
+                  />
+                </div>
+                <div v-if="form.enableGamification" style="margin-top: 8px;">
+                  <label class="form-label" style="font-size: 11px;">Récompense d'expérience (XP) par membre</label>
+                  <input v-model.number="form.gamificationXpReward" type="number" min="0" max="1000" class="form-input" placeholder="25" />
+                </div>
+              </div>
+
+              <!-- 🌙 Heures Silencieuses & Anti-Flood -->
+              <div class="form-group" style="background: rgba(87, 242, 135, 0.05); padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle); margin-top: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                  <div>
+                    <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🌙 Heures Silencieuses & Anti-Flood</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">Désactive les pings la nuit et limite le débit par heure</div>
+                  </div>
+                  <input
+                    v-model="form.quietHoursEnabled"
+                    type="checkbox"
+                    style="width: 18px; height: 18px; cursor: pointer; accent-color: #57f287;"
+                  />
+                </div>
+                <div v-if="form.quietHoursEnabled" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                  <div style="display: flex; gap: 10px;">
+                    <div style="flex: 1;">
+                      <label class="form-label" style="font-size: 11px;">Début du calme</label>
+                      <input v-model="form.quietHoursStart" type="time" class="form-input" />
+                    </div>
+                    <div style="flex: 1;">
+                      <label class="form-label" style="font-size: 11px;">Fin du calme</label>
+                      <input v-model="form.quietHoursEnd" type="time" class="form-input" />
+                    </div>
+                  </div>
+                  <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); cursor: pointer;">
+                    <input v-model="form.quietHoursSuppressMentions" type="checkbox" />
+                    Neutraliser les mentions et pings @everyone/@role la nuit
+                  </label>
+                </div>
+                <div style="margin-top: 8px;">
+                  <label class="form-label" style="font-size: 11px;">Débit maximum par heure (0 = illimité)</label>
+                  <input v-model.number="form.maxPostsPerHour" type="number" min="0" max="60" class="form-input" placeholder="0" />
+                </div>
+              </div>
+
+              <!-- 🔀 Routage par Tag Multi-Salons -->
+              <div class="form-group" style="margin-top: 10px;">
+                <label class="form-label">🔀 Routage par Tag (JSON : {"#tag": "ID_SALON"})</label>
+                <textarea
+                  v-model="form.channelTagRoutingJson"
+                  class="form-input"
+                  rows="2"
+                  placeholder='{"#ps5": "123456789012345678", "#switch": "987654321098765432"}'
+                ></textarea>
+                <span class="form-hint">Redirige automatiquement un article avec un tag spécifique vers un autre salon Discord.</span>
+              </div>
             </div>
           </div>
 
@@ -696,6 +788,95 @@
             />
           </div>
 
+          <!-- 📰 Mode Gazette & Digest -->
+          <div class="form-group" style="background: rgba(88, 101, 242, 0.05); padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle); margin-top: 10px;">
+            <label class="form-label" style="display: flex; align-items: center; gap: 6px;">
+              <span>📰</span>
+              <span>Mode de Diffusion & Digest</span>
+            </label>
+            <select v-model="editForm.digestMode" class="form-select" style="margin-bottom: 8px;">
+              <option value="realtime">⚡ Temps réel (instantané)</option>
+              <option value="daily">🌅 Gazette quotidienne (bulletin matinal)</option>
+              <option value="weekly">📅 Gazette hebdomadaire</option>
+            </select>
+            <div v-if="editForm.digestMode !== 'realtime'" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+              <div style="flex: 1; min-width: 120px;">
+                <label class="form-label" style="font-size: 11px;">Heure d'envoi</label>
+                <input v-model="editForm.digestSchedule" type="time" class="form-input" />
+              </div>
+              <div style="flex: 2; min-width: 180px;">
+                <label class="form-label" style="font-size: 11px;">Salon Digest (optionnel)</label>
+                <DiscordChannelSelect v-model="editForm.digestChannelId" placeholder="Même salon par défaut" />
+              </div>
+            </div>
+          </div>
+
+          <!-- 🎁 Gamification Drop Hunter -->
+          <div class="form-group" style="background: rgba(244, 180, 0, 0.06); padding: 12px; border-radius: 8px; border: 1px solid rgba(244, 180, 0, 0.2); margin-top: 10px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+              <div>
+                <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🎁 Bouton Drop Hunter (Offres Réclamées)</div>
+                <div style="font-size: 12px; color: var(--text-muted);">Ajoute un bouton « J'ai récupéré l'offre ! » avec compteur et attribution d'XP</div>
+              </div>
+              <input
+                v-model="editForm.enableGamification"
+                type="checkbox"
+                style="width: 18px; height: 18px; cursor: pointer; accent-color: #f4b400;"
+              />
+            </div>
+            <div v-if="editForm.enableGamification" style="margin-top: 8px;">
+              <label class="form-label" style="font-size: 11px;">Récompense d'expérience (XP) par membre</label>
+              <input v-model.number="editForm.gamificationXpReward" type="number" min="0" max="1000" class="form-input" placeholder="25" />
+            </div>
+          </div>
+
+          <!-- 🌙 Heures Silencieuses & Anti-Flood -->
+          <div class="form-group" style="background: rgba(87, 242, 135, 0.05); padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle); margin-top: 10px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+              <div>
+                <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🌙 Heures Silencieuses & Anti-Flood</div>
+                <div style="font-size: 12px; color: var(--text-muted);">Désactive les pings la nuit et limite le débit par heure</div>
+              </div>
+              <input
+                v-model="editForm.quietHoursEnabled"
+                type="checkbox"
+                style="width: 18px; height: 18px; cursor: pointer; accent-color: #57f287;"
+              />
+            </div>
+            <div v-if="editForm.quietHoursEnabled" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+              <div style="display: flex; gap: 10px;">
+                <div style="flex: 1;">
+                  <label class="form-label" style="font-size: 11px;">Début du calme</label>
+                  <input v-model="editForm.quietHoursStart" type="time" class="form-input" />
+                </div>
+                <div style="flex: 1;">
+                  <label class="form-label" style="font-size: 11px;">Fin du calme</label>
+                  <input v-model="editForm.quietHoursEnd" type="time" class="form-input" />
+                </div>
+              </div>
+              <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); cursor: pointer;">
+                <input v-model="editForm.quietHoursSuppressMentions" type="checkbox" />
+                Neutraliser les mentions et pings @everyone/@role la nuit
+              </label>
+            </div>
+            <div style="margin-top: 8px;">
+              <label class="form-label" style="font-size: 11px;">Débit maximum par heure (0 = illimité)</label>
+              <input v-model.number="editForm.maxPostsPerHour" type="number" min="0" max="60" class="form-input" placeholder="0" />
+            </div>
+          </div>
+
+          <!-- 🔀 Routage par Tag Multi-Salons -->
+          <div class="form-group" style="margin-top: 10px;">
+            <label class="form-label">🔀 Routage par Tag (JSON : {"#tag": "ID_SALON"})</label>
+            <textarea
+              v-model="editForm.channelTagRoutingJson"
+              class="form-input"
+              rows="2"
+              placeholder='{"#ps5": "123456789012345678", "#switch": "987654321098765432"}'
+            ></textarea>
+            <span class="form-hint">Redirige automatiquement un article avec un tag spécifique vers un autre salon Discord.</span>
+          </div>
+
           <div class="modal-footer">
             <button type="button" class="module-btn" @click="showEditModal = false">
               Annuler
@@ -814,7 +995,18 @@ const form = ref<CreateAutofeedPayload>({
   useWebhook: false,
   enableMediaProxy: false,
   ignoreShorts: false,
-  aiSummary: false
+  aiSummary: false,
+  digestMode: 'realtime' as 'realtime' | 'daily' | 'weekly',
+  digestSchedule: '08:00',
+  digestChannelId: '',
+  enableGamification: false,
+  gamificationXpReward: 25,
+  channelTagRoutingJson: '',
+  quietHoursEnabled: false,
+  quietHoursStart: '22:00',
+  quietHoursEnd: '08:00',
+  quietHoursSuppressMentions: true,
+  maxPostsPerHour: 0
 });
 
 const editForm = ref({
@@ -831,7 +1023,18 @@ const editForm = ref({
   useWebhook: false,
   enableMediaProxy: false,
   ignoreShorts: false,
-  aiSummary: false
+  aiSummary: false,
+  digestMode: 'realtime' as 'realtime' | 'daily' | 'weekly',
+  digestSchedule: '08:00',
+  digestChannelId: '',
+  enableGamification: false,
+  gamificationXpReward: 25,
+  channelTagRoutingJson: '',
+  quietHoursEnabled: false,
+  quietHoursStart: '22:00',
+  quietHoursEnd: '08:00',
+  quietHoursSuppressMentions: true,
+  maxPostsPerHour: 0
 });
 
 function isLiveProvider(provider?: string): boolean {
@@ -922,7 +1125,18 @@ function openCreateModal() {
     useWebhook: false,
     enableMediaProxy: false,
     ignoreShorts: false,
-    aiSummary: false
+    aiSummary: false,
+    digestMode: 'realtime' as 'realtime' | 'daily' | 'weekly',
+    digestSchedule: '08:00',
+    digestChannelId: '',
+    enableGamification: false,
+    gamificationXpReward: 25,
+    channelTagRoutingJson: '',
+    quietHoursEnabled: false,
+    quietHoursStart: '22:00',
+    quietHoursEnd: '08:00',
+    quietHoursSuppressMentions: true,
+    maxPostsPerHour: 0
   };
   tagsInput.value = '';
   includeKeywordsInput.value = '';
@@ -948,7 +1162,18 @@ function openEditModal(feed: AutofeedItem) {
     useWebhook: Boolean(feed.useWebhook),
     enableMediaProxy: Boolean(feed.enableMediaProxy),
     ignoreShorts: Boolean(feed.ignoreShorts),
-    aiSummary: Boolean(feed.aiSummary)
+    aiSummary: Boolean(feed.aiSummary),
+    digestMode: (feed.digestMode as any) || 'realtime',
+    digestSchedule: feed.digestSchedule || '08:00',
+    digestChannelId: feed.digestChannelId || '',
+    enableGamification: Boolean(feed.enableGamification),
+    gamificationXpReward: feed.gamificationXpReward || 25,
+    channelTagRoutingJson: feed.channelTagRouting && Object.keys(feed.channelTagRouting).length > 0 ? JSON.stringify(feed.channelTagRouting, null, 2) : '',
+    quietHoursEnabled: Boolean(feed.quietHours?.enabled),
+    quietHoursStart: feed.quietHours?.start || '22:00',
+    quietHoursEnd: feed.quietHours?.end || '08:00',
+    quietHoursSuppressMentions: feed.quietHours?.suppressMentions !== false,
+    maxPostsPerHour: feed.maxPostsPerHour || 0
   };
   editTagsInput.value = (feed.tags || []).join(', ');
   editIncludeInput.value = (feed.filterKeywords || []).join(', ');
@@ -1024,7 +1249,23 @@ async function handleCreateFeed() {
       .map(s => s.trim())
       .filter(Boolean);
 
-    const created = await autofeedsApi.createFeed(form.value);
+    let tagRouting = {};
+    if (form.value.channelTagRoutingJson) {
+      try { tagRouting = JSON.parse(form.value.channelTagRoutingJson); } catch {}
+    }
+
+    const payload = {
+      ...form.value,
+      channelTagRouting: tagRouting,
+      quietHours: {
+        enabled: form.value.quietHoursEnabled,
+        start: form.value.quietHoursStart,
+        end: form.value.quietHoursEnd,
+        suppressMentions: form.value.quietHoursSuppressMentions
+      }
+    };
+
+    const created = await autofeedsApi.createFeed(payload as any);
     feeds.value.unshift(created);
     showToast(`Flux « ${created.name} » créé avec succès !`, 'success');
     showModal.value = false;
@@ -1044,6 +1285,11 @@ async function handleUpdateFeed() {
     const parsedInclude = editIncludeInput.value.split(',').map(s => s.trim()).filter(Boolean);
     const parsedExclude = editExcludeInput.value.split(',').map(s => s.trim()).filter(Boolean);
 
+    let editTagRouting = {};
+    if (editForm.value.channelTagRoutingJson) {
+      try { editTagRouting = JSON.parse(editForm.value.channelTagRoutingJson); } catch {}
+    }
+
     const updated = await autofeedsApi.updateFeed(editingFeed.value.id, {
       name: editForm.value.name,
       channelId: editForm.value.channelId,
@@ -1059,6 +1305,19 @@ async function handleUpdateFeed() {
       enableMediaProxy: editForm.value.enableMediaProxy,
       ignoreShorts: editForm.value.ignoreShorts,
       aiSummary: editForm.value.aiSummary,
+      digestMode: editForm.value.digestMode,
+      digestSchedule: editForm.value.digestSchedule,
+      digestChannelId: editForm.value.digestChannelId || null,
+      enableGamification: editForm.value.enableGamification,
+      gamificationXpReward: editForm.value.gamificationXpReward,
+      channelTagRouting: editTagRouting,
+      quietHours: {
+        enabled: editForm.value.quietHoursEnabled,
+        start: editForm.value.quietHoursStart,
+        end: editForm.value.quietHoursEnd,
+        suppressMentions: editForm.value.quietHoursSuppressMentions
+      },
+      maxPostsPerHour: editForm.value.maxPostsPerHour,
       tags: parsedTags,
       filterKeywords: parsedInclude,
       excludeKeywords: parsedExclude

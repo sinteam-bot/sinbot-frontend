@@ -18,7 +18,7 @@
         <div class="module-stat-info">
           <span class="module-stat-label">Abonnements Membres</span>
           <span class="module-stat-value" style="color: var(--status-positive, #57f287);">
-            {{ subscriptions.length }}
+            {{ stats.totalSubscriptions || subscriptions.length }}
           </span>
           <span class="module-stat-sub">utilisateurs alertés par tag / feed</span>
         </div>
@@ -27,19 +27,82 @@
       <div class="module-stat-card">
         <div class="module-stat-icon">🎁</div>
         <div class="module-stat-info">
-          <span class="module-stat-label">Catalogue Presets</span>
-          <span class="module-stat-value">{{ presets.length || 8 }}</span>
-          <span class="module-stat-sub">LootScraper, Reddit &amp; News</span>
+          <span class="module-stat-label">Drop Hunter (Claims)</span>
+          <span class="module-stat-value" style="color: #f4b400;">
+            {{ stats.totalClaims || 0 }}
+          </span>
+          <span class="module-stat-sub">{{ stats.totalXpAwarded || 0 }} XP distribué aux membres</span>
+        </div>
+      </div>
+
+      <div class="module-stat-card">
+        <div class="module-stat-icon">📊</div>
+        <div class="module-stat-info">
+          <span class="module-stat-label">Publications Diffusées</span>
+          <span class="module-stat-value" style="color: #00b0f4;">
+            {{ stats.totalPosts || 0 }}
+          </span>
+          <span class="module-stat-sub">{{ stats.totalClicks || 0 }} clics enregistrés</span>
         </div>
       </div>
 
       <div class="module-stat-card">
         <div class="module-stat-icon">🌐</div>
         <div class="module-stat-info">
-          <span class="module-stat-label">Sources Supportées</span>
-          <span class="module-stat-value">11</span>
-          <span class="module-stat-sub">4 prêtes + 7 intégrables</span>
+          <span class="module-stat-label">Fournisseurs Actifs</span>
+          <span class="module-stat-value">16</span>
+          <span class="module-stat-sub">GitHub, GitLab, Status, RSS...</span>
         </div>
+      </div>
+    </div>
+
+    <!-- Section Recherche Plein Texte & Analytics -->
+    <div class="config-card">
+      <div class="card-subtitle" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span>🔍</span>
+          <span>Recherche d'Articles &amp; Offres Historiques</span>
+        </div>
+        <span style="font-size: 12px; color: var(--text-muted);">Recherche plein texte dans tous les articles indexés</span>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap;">
+        <input
+          v-model="searchQuery"
+          type="text"
+          class="form-input"
+          style="flex: 1; min-width: 200px;"
+          placeholder="Rechercher un mot-clé, une offre, un jeu (ex: GTA, Cyberpunk, free, epic)..."
+          @keyup.enter="handleSearch"
+        />
+        <button class="module-btn primary" :disabled="searching" @click="handleSearch">
+          <span>{{ searching ? '⏳ Recherche...' : '🔍 Rechercher' }}</span>
+        </button>
+      </div>
+
+      <!-- Résultats de recherche -->
+      <div v-if="searchResults.length > 0" style="margin-top: 14px; display: flex; flex-direction: column; gap: 8px;">
+        <div
+          v-for="item in searchResults"
+          :key="item.id"
+          style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--background-secondary-alt); border-radius: 8px; border: 1px solid var(--border-subtle); flex-wrap: wrap; gap: 8px;"
+        >
+          <div style="flex: 1; min-width: 200px;">
+            <a :href="item.url || '#'" target="_blank" rel="noopener noreferrer" style="font-weight: 600; color: var(--header-primary); text-decoration: none; font-size: 14px;">
+              {{ item.title }} ↗
+            </a>
+            <div style="font-size: 12px; color: var(--text-muted); display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap; align-items: center;">
+              <span>Source : {{ item.feedName }}</span>
+              <span v-for="t in item.tags" :key="t" class="tag-badge">#{{ t.replace(/^#/, '') }}</span>
+            </div>
+          </div>
+          <span v-if="item.clicksCount > 0" style="font-size: 12px; color: var(--text-muted);">
+            👁️ {{ item.clicksCount }} clic(s)
+          </span>
+        </div>
+      </div>
+      <div v-else-if="searched && !searching" style="margin-top: 12px; font-size: 13px; color: var(--text-muted); text-align: center; padding: 12px;">
+        Aucun article trouvé pour cette recherche.
       </div>
     </div>
 
@@ -163,6 +226,18 @@
 
         <div class="commands-table">
           <div class="command-row">
+            <code>/feed search &lt;query&gt;</code>
+            <span>Recherche plein texte dans l'historique des publications &amp; offres</span>
+          </div>
+          <div class="command-row">
+            <code>/feed stats</code>
+            <span>Affiche les analytics détaillées (top tags, providers, claims XP)</span>
+          </div>
+          <div class="command-row">
+            <code>/feed digest &lt;flux&gt;</code>
+            <span>Génère et publie immédiatement la Gazette / Digest avec synthèse IA</span>
+          </div>
+          <div class="command-row">
             <code>/feed list</code>
             <span>Affiche la liste de tous les flux actifs sur le serveur</span>
           </div>
@@ -175,18 +250,22 @@
             <span>Affiche le catalogue de flux prêts à être installés</span>
           </div>
           <div class="command-row">
-            <code>/feed my-subscriptions</code>
-            <span>Consulter et gérer ses alertes personnalisées</span>
+            <code>/feed streamers</code>
+            <span>Surveille les créateurs et lives en direct (Twitch, Kick, YouTube)</span>
+          </div>
+          <div class="command-row">
+            <code>/feed menu</code>
+            <span>Menu interactif avec sélecteur Discord pour s'abonner</span>
           </div>
         </div>
 
         <div style="margin-top: 20px; padding: 12px; background: var(--background-secondary-alt); border-radius: 8px; border: 1px solid var(--border-subtle);">
           <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; color: var(--header-primary); margin-bottom: 6px;">
             <span>💡</span>
-            <span>Boutons d'Abonnement en 1-Clic</span>
+            <span>Boutons d'Abonnement en 1-Clic &amp; Drop Hunter</span>
           </div>
           <p style="margin: 0; font-size: 12px; color: var(--text-muted); line-height: 1.5;">
-            Chaque message posté par le bot dans Discord inclut un bouton interactif <strong>« 🔔 M'alerter pour #[tag] »</strong>. Les membres cliquent dessus pour s'abonner instantanément sans taper aucune commande !
+            Chaque message posté par le bot dans Discord inclut un bouton interactif <strong>« 🔔 M'alerter pour #[tag] »</strong> ainsi qu'un bouton <strong>« 🎁 J'ai récupéré l'offre ! »</strong> récompensant les membres en XP !
           </p>
         </div>
       </div>
@@ -196,7 +275,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { useAutofeeds, type AutofeedItem, type AutofeedSubscription, type AutofeedPreset } from '~/composables/useAutofeeds.ts';
+import { useAutofeeds, type AutofeedItem, type AutofeedSubscription, type AutofeedPreset, type AutofeedStats, type AutofeedSearchItem } from '~/composables/useAutofeeds.ts';
 import DiscordChannel from '~/components/common/DiscordChannel.vue';
 import { useToast } from '~/composables/useToast.ts';
 
@@ -206,26 +285,62 @@ const { showToast } = useToast();
 const feeds = ref<AutofeedItem[]>([]);
 const subscriptions = ref<AutofeedSubscription[]>([]);
 const presets = ref<AutofeedPreset[]>([]);
+const stats = ref<AutofeedStats>({
+  totalFeeds: 0,
+  activeFeeds: 0,
+  totalSubscriptions: 0,
+  totalPosts: 0,
+  totalClicks: 0,
+  totalClaims: 0,
+  totalXpAwarded: 0,
+  topTags: [],
+  topProviders: []
+});
 const loading = ref(true);
 const testingId = ref<string | null>(null);
+
+// État de recherche plein texte
+const searchQuery = ref('');
+const searchResults = ref<AutofeedSearchItem[]>([]);
+const searching = ref(false);
+const searched = ref(false);
 
 const activeFeedsCount = computed(() => feeds.value.filter(f => f.isActive).length);
 
 async function loadData() {
   loading.value = true;
   try {
-    const [fetchedFeeds, fetchedSubs, fetchedPresets] = await Promise.all([
+    const [fetchedFeeds, fetchedSubs, fetchedPresets, fetchedStats] = await Promise.all([
       autofeedsApi.fetchFeeds(),
       autofeedsApi.fetchSubscriptions(),
-      autofeedsApi.fetchPresets()
+      autofeedsApi.fetchPresets(),
+      autofeedsApi.fetchStats()
     ]);
     feeds.value = fetchedFeeds || [];
     subscriptions.value = fetchedSubs || [];
     presets.value = fetchedPresets || [];
+    if (fetchedStats) stats.value = fetchedStats;
   } catch (err: any) {
     showToast(`Erreur chargement des flux: ${err.message}`, 'error');
   } finally {
     loading.value = false;
+  }
+}
+
+async function handleSearch() {
+  if (!searchQuery.value.trim()) {
+    searchResults.value = [];
+    searched.value = false;
+    return;
+  }
+  searching.value = true;
+  searched.value = true;
+  try {
+    searchResults.value = await autofeedsApi.searchItems(searchQuery.value.trim(), undefined, 10);
+  } catch (err: any) {
+    showToast(`Erreur recherche : ${err.message}`, 'error');
+  } finally {
+    searching.value = false;
   }
 }
 
