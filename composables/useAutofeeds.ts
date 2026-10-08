@@ -67,6 +67,13 @@ export interface AutofeedItem {
   breakingRoleId?: string | null;
   autoExpireDays?: number;
   enableAudioBriefing?: boolean;
+  enableVoting?: boolean;
+  bestOfThreshold?: number;
+  bestOfChannelId?: string | null;
+  minDiscountPercent?: number;
+  autoSyncEvents?: boolean;
+  goodVibesOnly?: boolean;
+  enableSecurityScan?: boolean;
   lastItemId?: string | null;
   lastItemPublishedAt?: number;
   intervalMinutes: number;
@@ -129,8 +136,36 @@ export interface CreateAutofeedPayload {
   breakingRoleId?: string | null;
   autoExpireDays?: number;
   enableAudioBriefing?: boolean;
+  enableVoting?: boolean;
+  bestOfThreshold?: number;
+  bestOfChannelId?: string | null;
+  minDiscountPercent?: number;
+  autoSyncEvents?: boolean;
+  goodVibesOnly?: boolean;
+  enableSecurityScan?: boolean;
   guildId?: string;
   filters?: AutofeedFilters;
+}
+
+export interface ReaderArticle {
+  url: string;
+  title: string;
+  author?: string | null;
+  siteName?: string | null;
+  leadImage?: string | null;
+  leadImageUrl?: string | null;
+  paragraphs?: string[];
+  text: string;
+  textContent: string;
+  wordCount: number;
+  readingTimeMinutes: number;
+}
+
+export interface VoteStats {
+  upvotes: number;
+  downvotes: number;
+  score: number;
+  totalVotes: number;
 }
 
 export interface AutofeedStats {
@@ -490,6 +525,18 @@ export const useAutofeeds = () => {
     return res.data;
   }
 
+  async function getReaderArticle(url: string): Promise<ReaderArticle> {
+    const res = await api.apiFetch<{ ok?: boolean; success?: boolean; data: ReaderArticle; error?: string }>(`/api/autofeeds/reader?url=${encodeURIComponent(url)}`);
+    if ((res.ok === false || res.success === false) && res.error) throw new Error(res.error);
+    return res.data;
+  }
+
+  async function getVotes(targetId: string, targetType: string = 'autofeed'): Promise<VoteStats> {
+    const res = await api.apiFetch<{ ok?: boolean; success?: boolean; data: VoteStats; error?: string }>(`/api/autofeeds/votes?targetId=${encodeURIComponent(targetId)}&targetType=${encodeURIComponent(targetType)}`);
+    if ((res.ok === false || res.success === false) && res.error) throw new Error(res.error);
+    return res.data;
+  }
+
   return {
     listFeeds,
     fetchFeeds: listFeeds,
@@ -514,6 +561,8 @@ export const useAutofeeds = () => {
     searchItems,
     claimItem,
     purgeExpired,
-    getAudioBriefing
+    getAudioBriefing,
+    getReaderArticle,
+    getVotes
   };
 };

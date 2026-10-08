@@ -246,6 +246,14 @@
             <span>Génère un flash audio radio TTS des dernières actualités</span>
           </div>
           <div class="command-row">
+            <code>/feed read &lt;url&gt;</code>
+            <span>Extrait et affiche l'article épuré en Mode Lecture instantané sans pub</span>
+          </div>
+          <div class="command-row">
+            <code>/feed bestof [limite]</code>
+            <span>Affiche les articles les plus plébiscités par la communauté (upvotes)</span>
+          </div>
+          <div class="command-row">
             <code>/feed list</code>
             <span>Affiche la liste de tous les flux actifs sur le serveur</span>
           </div>

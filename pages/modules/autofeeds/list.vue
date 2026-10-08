@@ -155,6 +155,26 @@
           <div v-if="feed.category" class="meta-item">
             <span class="tag-badge category">{{ feed.category }}</span>
           </div>
+          <div v-if="feed.enableVoting" class="meta-item" title="Curation communautaire par votes">
+            <span class="meta-icon">🗳️</span>
+            <span class="meta-text">Votes</span>
+          </div>
+          <div v-if="feed.minDiscountPercent" class="meta-item" title="Traqueur de réductions et prix historiques">
+            <span class="meta-icon">💰</span>
+            <span class="meta-text">≥ {{ feed.minDiscountPercent }}%</span>
+          </div>
+          <div v-if="feed.autoSyncEvents" class="meta-item" title="Synchronisation d'événements Discord">
+            <span class="meta-icon">🗓️</span>
+            <span class="meta-text">Events</span>
+          </div>
+          <div v-if="feed.goodVibesOnly" class="meta-item" title="Filtre Good Vibes Only (positivité)">
+            <span class="meta-icon">🎭</span>
+            <span class="meta-text">Good Vibes</span>
+          </div>
+          <div v-if="feed.enableSecurityScan" class="meta-item" title="Bouclier Anti-Phishing & URLs Dépliées">
+            <span class="meta-icon">🛡️</span>
+            <span class="meta-text">Shield</span>
+          </div>
         </div>
 
         <!-- Tags -->
@@ -200,6 +220,13 @@
               @click="openEditModal(feed)"
             >
               <span>✏️</span>
+            </button>
+            <button
+              class="module-btn icon-only"
+              title="Mode Lecture Épuré (Reader View)"
+              @click="openReaderModal(feed.url)"
+            >
+              <span>📖</span>
             </button>
             <button
               class="module-btn icon-only"
@@ -633,6 +660,69 @@
                   <input v-model="form.enableAudioBriefing" type="checkbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: #5865f2;" />
                 </div>
               </div>
+
+              <!-- 🗳️ Votes & Promotion Best-Of -->
+              <div class="form-group" style="background: rgba(88, 101, 242, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(88, 101, 242, 0.2); margin-top: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                  <div>
+                    <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🗳️ Curation Communautaire (Upvote / Downvote)</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">Ajoute des boutons 👍 / 👎 Discord interactifs sous les publications</div>
+                  </div>
+                  <input v-model="form.enableVoting" type="checkbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: #5865f2;" />
+                </div>
+                <div v-if="form.enableVoting" style="display: flex; flex-direction: column; gap: 8px; padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.1);">
+                  <div>
+                    <label class="form-label" style="font-size: 11px;">Seuil de votes positifs pour promotion Best-Of</label>
+                    <input v-model.number="form.bestOfThreshold" type="number" min="1" max="100" class="form-input" placeholder="Ex: 5" />
+                    <span class="form-hint" style="font-size: 11px;">Nombre net d'upvotes requis pour déclencher la mise en avant automatique.</span>
+                  </div>
+                  <div>
+                    <label class="form-label" style="font-size: 11px;">Salon Discord Best-Of (optionnel, sinon le même salon)</label>
+                    <DiscordChannelSelect v-model="form.bestOfChannelId" placeholder="Salon Best-Of (optionnel)" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- 💰 Traqueur de Prix & All-Time Low (ATL) -->
+              <div class="form-group" style="background: rgba(245, 158, 11, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(245, 158, 11, 0.2); margin-top: 10px;">
+                <div style="font-weight: 600; color: var(--header-primary); font-size: 13px; margin-bottom: 6px;">💰 Filtre Bons Plans & Suivi Prix (ATL)</div>
+                <label class="form-label" style="font-size: 11px;">Réduction minimale en % requise pour publier (0 = désactivé / tous)</label>
+                <input v-model.number="form.minDiscountPercent" type="number" min="0" max="100" class="form-input" placeholder="Ex: 50 pour ≥ 50% de remise" />
+                <span class="form-hint" style="font-size: 11px;">Détecte automatiquement les prix historiques et ajoute le badge 🔥 ATL si nouveau record.</span>
+              </div>
+
+              <!-- 🗓️ Synchronisation Événements Programmés Discord -->
+              <div class="form-group" style="background: rgba(16, 185, 129, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.2); margin-top: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <div>
+                    <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🗓️ Synchronisation Événements Discord</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">Création automatique d'un GuildScheduledEvent si une date future est détectée</div>
+                  </div>
+                  <input v-model="form.autoSyncEvents" type="checkbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: #10b981;" />
+                </div>
+              </div>
+
+              <!-- 🎭 Filtre d'Humeur & Positivité ("Good Vibes Only") -->
+              <div class="form-group" style="background: rgba(236, 72, 153, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(236, 72, 153, 0.2); margin-top: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <div>
+                    <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🎭 Good Vibes Only (Filtre Sentiment)</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">Exclut automatiquement les actualités dramatiques ou anxiogènes dans les salons calmes</div>
+                  </div>
+                  <input v-model="form.goodVibesOnly" type="checkbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: #ec4899;" />
+                </div>
+              </div>
+
+              <!-- 🛡️ Bouclier Sécurité & Déplieur d'URLs -->
+              <div class="form-group" style="background: rgba(99, 102, 241, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.2); margin-top: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <div>
+                    <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🛡️ Bouclier Anti-Phishing & Dépliage d'URLs</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">Déplie les liens courts (bit.ly, t.co...) et bloque les redirections suspectes</div>
+                  </div>
+                  <input v-model="form.enableSecurityScan" type="checkbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: #6366f1;" />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -994,6 +1084,69 @@
             </div>
           </div>
 
+          <!-- 🗳️ Votes & Promotion Best-Of -->
+          <div class="form-group" style="background: rgba(88, 101, 242, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(88, 101, 242, 0.2); margin-top: 10px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+              <div>
+                <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🗳️ Curation Communautaire (Upvote / Downvote)</div>
+                <div style="font-size: 12px; color: var(--text-muted);">Ajoute des boutons 👍 / 👎 Discord interactifs sous les publications</div>
+              </div>
+              <input v-model="editForm.enableVoting" type="checkbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: #5865f2;" />
+            </div>
+            <div v-if="editForm.enableVoting" style="display: flex; flex-direction: column; gap: 8px; padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.1);">
+              <div>
+                <label class="form-label" style="font-size: 11px;">Seuil de votes positifs pour promotion Best-Of</label>
+                <input v-model.number="editForm.bestOfThreshold" type="number" min="1" max="100" class="form-input" placeholder="Ex: 5" />
+                <span class="form-hint" style="font-size: 11px;">Nombre net d'upvotes requis pour déclencher la mise en avant automatique.</span>
+              </div>
+              <div>
+                <label class="form-label" style="font-size: 11px;">Salon Discord Best-Of (optionnel, sinon le même salon)</label>
+                <DiscordChannelSelect v-model="editForm.bestOfChannelId" placeholder="Salon Best-Of (optionnel)" />
+              </div>
+            </div>
+          </div>
+
+          <!-- 💰 Traqueur de Prix & All-Time Low (ATL) -->
+          <div class="form-group" style="background: rgba(245, 158, 11, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(245, 158, 11, 0.2); margin-top: 10px;">
+            <div style="font-weight: 600; color: var(--header-primary); font-size: 13px; margin-bottom: 6px;">💰 Filtre Bons Plans & Suivi Prix (ATL)</div>
+            <label class="form-label" style="font-size: 11px;">Réduction minimale en % requise pour publier (0 = désactivé / tous)</label>
+            <input v-model.number="editForm.minDiscountPercent" type="number" min="0" max="100" class="form-input" placeholder="Ex: 50 pour ≥ 50% de remise" />
+            <span class="form-hint" style="font-size: 11px;">Détecte automatiquement les prix historiques et ajoute le badge 🔥 ATL si nouveau record.</span>
+          </div>
+
+          <!-- 🗓️ Synchronisation Événements Programmés Discord -->
+          <div class="form-group" style="background: rgba(16, 185, 129, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.2); margin-top: 10px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🗓️ Synchronisation Événements Discord</div>
+                <div style="font-size: 12px; color: var(--text-muted);">Création automatique d'un GuildScheduledEvent si une date future est détectée</div>
+              </div>
+              <input v-model="editForm.autoSyncEvents" type="checkbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: #10b981;" />
+            </div>
+          </div>
+
+          <!-- 🎭 Filtre d'Humeur & Positivité ("Good Vibes Only") -->
+          <div class="form-group" style="background: rgba(236, 72, 153, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(236, 72, 153, 0.2); margin-top: 10px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🎭 Good Vibes Only (Filtre Sentiment)</div>
+                <div style="font-size: 12px; color: var(--text-muted);">Exclut automatiquement les actualités dramatiques ou anxiogènes dans les salons calmes</div>
+              </div>
+              <input v-model="editForm.goodVibesOnly" type="checkbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: #ec4899;" />
+            </div>
+          </div>
+
+          <!-- 🛡️ Bouclier Sécurité & Déplieur d'URLs -->
+          <div class="form-group" style="background: rgba(99, 102, 241, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.2); margin-top: 10px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <div style="font-weight: 600; color: var(--header-primary); font-size: 13px;">🛡️ Bouclier Anti-Phishing & Dépliage d'URLs</div>
+                <div style="font-size: 12px; color: var(--text-muted);">Déplie les liens courts (bit.ly, t.co...) et bloque les redirections suspectes</div>
+              </div>
+              <input v-model="editForm.enableSecurityScan" type="checkbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: #6366f1;" />
+            </div>
+          </div>
+
           <div class="modal-footer">
             <button type="button" class="module-btn" @click="showEditModal = false">
               Annuler
@@ -1083,6 +1236,59 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal Reader View (Mode Lecture Épuré) -->
+    <div v-if="showReaderModal" class="modal-backdrop" @click.self="showReaderModal = false">
+      <div class="modal-card" style="max-width: 700px; max-height: 85vh; display: flex; flex-direction: column;">
+        <div class="modal-header">
+          <h3 style="margin: 0; font-size: 16px; color: var(--header-primary); display: flex; align-items: center; gap: 8px;">
+            <span>📖</span> Mode Lecture Épuré (Reader View)
+          </h3>
+          <button class="close-btn" @click="showReaderModal = false">✕</button>
+        </div>
+
+        <div v-if="readerLoading" style="padding: 40px; text-align: center; color: var(--text-muted);">
+          <div style="font-size: 32px; margin-bottom: 12px;">⏳</div>
+          <div style="font-size: 14px;">Extraction et nettoyage du contenu de l'article en cours...</div>
+        </div>
+
+        <div v-else-if="readerArticle" style="padding: 18px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; flex: 1;">
+          <div>
+            <h2 style="margin: 0 0 8px 0; font-size: 20px; color: var(--header-primary); line-height: 1.35; font-weight: 700;">
+              {{ readerArticle.title }}
+            </h2>
+            <div style="display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--text-muted); flex-wrap: wrap;">
+              <span v-if="readerArticle.author">✍️ {{ readerArticle.author }}</span>
+              <span v-if="readerArticle.readingTimeMinutes">⏱️ ~{{ readerArticle.readingTimeMinutes }} min de lecture</span>
+              <span v-if="readerArticle.publishedAt">📅 {{ new Date(readerArticle.publishedAt).toLocaleDateString() }}</span>
+              <a :href="readerArticle.url" target="_blank" rel="noopener noreferrer" style="color: var(--accent-primary); text-decoration: none;">
+                🔗 Source originale ↗
+              </a>
+            </div>
+          </div>
+
+          <div v-if="readerArticle.excerpt" style="padding: 10px 14px; background: var(--background-secondary-alt); border-left: 3px solid #5865f2; border-radius: 4px; font-size: 13px; font-style: italic; color: var(--text-normal);">
+            {{ readerArticle.excerpt }}
+          </div>
+
+          <div v-if="readerArticle.leadImage" style="text-align: center;">
+            <img :src="readerArticle.leadImage" alt="Illustration" style="max-width: 100%; max-height: 280px; object-fit: cover; border-radius: 8px;" />
+          </div>
+
+          <div style="font-size: 14px; line-height: 1.7; color: var(--text-normal); white-space: pre-wrap; word-break: break-word;">
+            {{ readerArticle.content }}
+          </div>
+        </div>
+
+        <div v-else style="padding: 30px; text-align: center; color: var(--text-muted);">
+          <span>Aucun contenu disponible pour cette page.</span>
+        </div>
+
+        <div class="modal-footer" style="padding: 12px 20px;">
+          <button class="module-btn" @click="showReaderModal = false">Fermer</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -1128,6 +1334,10 @@ const audioLoadingId = ref<string | null>(null);
 const showAudioModal = ref(false);
 const currentBriefing = ref<{ feedId: string; feedTitle: string; script: string; itemCount: number; filename: string } | null>(null);
 
+const showReaderModal = ref(false);
+const readerLoading = ref(false);
+const readerArticle = ref<any | null>(null);
+
 const form = ref<any>({
   url: '',
   name: '',
@@ -1166,7 +1376,14 @@ const form = ref<any>({
   bypassQuietHours: false,
   breakingRoleId: '',
   autoExpireDays: 0,
-  enableAudioBriefing: false
+  enableAudioBriefing: false,
+  enableVoting: false,
+  bestOfThreshold: 5,
+  bestOfChannelId: '',
+  minDiscountPercent: 0,
+  autoSyncEvents: false,
+  goodVibesOnly: false,
+  enableSecurityScan: true
 });
 
 const editForm = ref({
@@ -1201,7 +1418,14 @@ const editForm = ref({
   bypassQuietHours: false,
   breakingRoleId: '',
   autoExpireDays: 0,
-  enableAudioBriefing: false
+  enableAudioBriefing: false,
+  enableVoting: false,
+  bestOfThreshold: 5,
+  bestOfChannelId: '',
+  minDiscountPercent: 0,
+  autoSyncEvents: false,
+  goodVibesOnly: false,
+  enableSecurityScan: true
 });
 
 function isLiveProvider(provider?: string): boolean {
@@ -1303,7 +1527,21 @@ function openCreateModal() {
     quietHoursStart: '22:00',
     quietHoursEnd: '08:00',
     quietHoursSuppressMentions: true,
-    maxPostsPerHour: 0
+    maxPostsPerHour: 0,
+    autoReactionsInput: '',
+    autoPoll: false,
+    breakingKeywordsInput: '',
+    bypassQuietHours: false,
+    breakingRoleId: '',
+    autoExpireDays: 0,
+    enableAudioBriefing: false,
+    enableVoting: false,
+    bestOfThreshold: 5,
+    bestOfChannelId: '',
+    minDiscountPercent: 0,
+    autoSyncEvents: false,
+    goodVibesOnly: false,
+    enableSecurityScan: true
   };
   tagsInput.value = '';
   includeKeywordsInput.value = '';
@@ -1347,7 +1585,14 @@ function openEditModal(feed: AutofeedItem) {
     bypassQuietHours: Boolean(feed.bypassQuietHours),
     breakingRoleId: feed.breakingRoleId || '',
     autoExpireDays: feed.autoExpireDays || 0,
-    enableAudioBriefing: Boolean(feed.enableAudioBriefing)
+    enableAudioBriefing: Boolean(feed.enableAudioBriefing),
+    enableVoting: Boolean(feed.enableVoting),
+    bestOfThreshold: feed.bestOfThreshold || 5,
+    bestOfChannelId: feed.bestOfChannelId || '',
+    minDiscountPercent: feed.minDiscountPercent || 0,
+    autoSyncEvents: Boolean(feed.autoSyncEvents),
+    goodVibesOnly: Boolean(feed.goodVibesOnly),
+    enableSecurityScan: feed.enableSecurityScan !== false
   };
   editTagsInput.value = (feed.tags || []).join(', ');
   editIncludeInput.value = (feed.filterKeywords || []).join(', ');
@@ -1447,6 +1692,13 @@ async function handleCreateFeed() {
       breakingRoleId: form.value.breakingRoleId || undefined,
       autoExpireDays: Number(form.value.autoExpireDays || 0),
       enableAudioBriefing: Boolean(form.value.enableAudioBriefing),
+      enableVoting: Boolean(form.value.enableVoting),
+      bestOfThreshold: Number(form.value.bestOfThreshold || 5),
+      bestOfChannelId: form.value.bestOfChannelId || undefined,
+      minDiscountPercent: Number(form.value.minDiscountPercent || 0),
+      autoSyncEvents: Boolean(form.value.autoSyncEvents),
+      goodVibesOnly: Boolean(form.value.goodVibesOnly),
+      enableSecurityScan: Boolean(form.value.enableSecurityScan),
       channelTagRouting: tagRouting,
       quietHours: {
         enabled: form.value.quietHoursEnabled,
@@ -1526,6 +1778,13 @@ async function handleUpdateFeed() {
       breakingRoleId: editForm.value.breakingRoleId || undefined,
       autoExpireDays: Number(editForm.value.autoExpireDays || 0),
       enableAudioBriefing: Boolean(editForm.value.enableAudioBriefing),
+      enableVoting: Boolean(editForm.value.enableVoting),
+      bestOfThreshold: Number(editForm.value.bestOfThreshold || 5),
+      bestOfChannelId: editForm.value.bestOfChannelId || null,
+      minDiscountPercent: Number(editForm.value.minDiscountPercent || 0),
+      autoSyncEvents: Boolean(editForm.value.autoSyncEvents),
+      goodVibesOnly: Boolean(editForm.value.goodVibesOnly),
+      enableSecurityScan: Boolean(editForm.value.enableSecurityScan),
       tags: parsedTags,
       filterKeywords: parsedInclude,
       excludeKeywords: parsedExclude
@@ -1625,6 +1884,25 @@ async function handleAudioBriefing(feed: any) {
     showToast(`Impossible de générer le flash audio : ${err.message}`, 'error');
   } finally {
     audioLoadingId.value = null;
+  }
+}
+
+async function openReaderModal(url?: string) {
+  if (!url) {
+    showToast('Aucune URL valide pour ce flux.', 'warning');
+    return;
+  }
+  readerLoading.value = true;
+  showReaderModal.value = true;
+  readerArticle.value = null;
+  try {
+    const article = await autofeedsApi.getReaderArticle(url);
+    readerArticle.value = article;
+  } catch (err: any) {
+    showToast(`Impossible d'extraire la vue lecture : ${err.message}`, 'error');
+    showReaderModal.value = false;
+  } finally {
+    readerLoading.value = false;
   }
 }
 
